@@ -1,0 +1,199 @@
+{% extends "base.html" %}
+{% block content %}
+
+<header class="text-center mb-8">
+  <h1 class="text-3xl font-extrabold text-[#0f8238]">Budget Tracker</h1>
+  <p class="text-gray-600 mt-1 text-sm sm:text-base">Take control of your finances with smart expense tracking</p>
+</header>
+
+<section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+  <div class="bg-white rounded-lg p-6 shadow-sm relative">
+    <div class="absolute top-5 right-5 w-5 h-5 rounded-full bg-[#1e90ff]"></div>
+    <h3 class="text-xs font-semibold mb-1">Total Income</h3>
+    <p class="text-[#1e90ff] font-extrabold text-xl sm:text-2xl">${{ total_income }}</p>
+    <p class="text-gray-500 text-xs sm:text-sm mt-1">Monthly income</p>
+  </div>
+  <div class="bg-white rounded-xl p-6 shadow relative animate-fade-in">
+    <div class="absolute top-5 right-5 w-5 h-5 rounded-full bg-[#f3703f]"></div>
+    <h3 class="text-sm font-semibold mb-1">Monthly Expenses</h3>
+    <p class="text-[#f3703f] font-extrabold text-2xl sm:text-2xl">${{ total_expenses }}</p>
+    <p class="text-gray-500 text-xs sm:text-xs mt-1">This month's spending</p>
+
+    <div class="flex justify-between items-center text-sm font-medium text-gray-700 mb-1">
+      <span>Limit</span>
+      <span>${{ monthly_limit }}</span>
+    </div>
+    <div class="group relative w-full">
+      <div class="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+        <div
+          class="h-full bg-green-500 rounded-full transition-all duration-700"
+          style="width: {{ (total_expenses / monthly_limit * 100 if monthly_limit else 0) | round(1) }}%;"
+        ></div>
+      </div>
+      <div
+        class="absolute -top-8 right-0 text-xs text-white bg-gray-800 px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition"
+      >
+        {{ (total_expenses / monthly_limit * 100 if monthly_limit else 0) | round(1) }}%
+      </div>
+    </div>
+
+  </div>
+
+  <div class="bg-white rounded-lg p-6 shadow-sm relative">
+    <div class="absolute top-5 right-5 w-5 h-5 rounded-full bg-[#0f8238]"></div>
+    <h3 class="text-xs font-semibold mb-1">Net Savings</h3>
+    <p class="text-[#0f8238] font-extrabold text-xl sm:text-2xl">${{ net_savings }}</p>
+    <p class="text-gray-500 text-xs sm:text-sm mt-1">Income - Expenses</p>
+  </div>
+  <div class="bg-white rounded-lg p-6 shadow-sm relative">
+    <div class="absolute top-5 right-5 w-5 h-5 rounded-full bg-[#6466f1]"></div>
+    <h3 class="text-xs font-semibold mb-1">Total Savings</h3>
+    <p class="text-[#6466f1] font-extrabold text-xl sm:text-2xl">${{ total_savings }}</p>
+    <p class="text-gray-500 text-xs sm:text-sm mt-1">Accumulated savings</p>
+  </div>
+</section>
+
+<section class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+  <div class="bg-white rounded-lg p-6 shadow-sm">
+    <h2 class="text-[#0f8238] font-extrabold text-lg mb-4">Expenses by Category</h2>
+    <div class="h-[250px]">
+      <canvas id="categoryChart"></canvas>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-lg p-6 shadow-sm">
+    <h2 class="text-[#f3703f] font-extrabold text-lg mb-4">Daily Expenses (Last 30 Days)</h2>
+    <div class="h-[250px]">
+      <canvas id="dailyChart"></canvas>
+    </div>
+  </div>
+</section>
+
+<section class="bg-white mt-6 rounded-lg p-6 shadow-sm">
+  <h2 class="text-[#0f8238] font-extrabold text-lg mb-4">Savings Trend</h2>
+  <div class="h-[280px]">
+    <canvas id="savingsChart"></canvas>
+  </div>
+
+</section>
+
+<script>
+new Chart(document.getElementById('categoryChart'), {
+  type: 'pie',
+  data: {
+    labels: {{ pie_labels|tojson }},
+    datasets: [{
+      data: {{ pie_values|tojson }},
+      backgroundColor: [
+        '#003f5c', '#2f4b7c', '#665191', '#a05195', '#d45087',
+        '#f95d6a', '#ff7c43', '#ffa600', '#ffd166', '#f6c667'
+      ],
+      borderColor: '#f7f8fa',
+      borderWidth: 0.5
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'bottom',
+        labels: {
+          boxWidth: 12,
+          padding: 10
+        }
+      }
+    }
+  }
+});
+
+
+
+  new Chart(document.getElementById('dailyChart'), {
+  type: 'bar',
+  data: {
+    labels: {{ daily_labels|tojson }},
+    datasets: [{
+      label: 'Daily',
+      data: {{ daily_values|tojson }},
+      backgroundColor: [
+        '#58508d', '#7a5195', '#10b981', '#2ec4b6', '#00bfae',
+        '#ff6361', '#ff6e54', '#ffa600', '#bc5090', '#003f5c'
+      ],
+      // Optionally force bar width:
+      barThickness: 50
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    scales: {
+      x: {
+        grid: { display: false },
+        ticks: { font: { size: 10 } },
+        // Slim bars using percentage of space:
+        categoryPercentage: 0.6,
+        barPercentage: 0.6
+      },
+      y: {
+        beginAtZero: true,
+        ticks: { font: { size: 10 } }
+      }
+    },
+    plugins: {
+      legend: { display: false }
+    }
+  }
+});
+
+
+new Chart(document.getElementById('savingsChart'), {
+  type: 'line',
+  data: {
+    labels: {{ savings_labels|tojson }},
+    datasets: [{
+      label: 'Savings',
+      data: {{ savings_values|tojson }},
+      fill: false,
+      borderColor: '#0f8238',        // consistent green
+      backgroundColor: '#0f8238',
+      pointRadius: 3,
+      pointHoverRadius: 5,
+      pointBackgroundColor: '#10b981',
+      pointBorderWidth: 1,
+      tension: 0.4                    // smooth curves
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        display: true,
+        labels: {
+          color: '#333',
+          font: { size: 12 }
+        }
+      },
+      tooltip: {
+        mode: 'index',
+        intersect: false
+      }
+    },
+    scales: {
+      x: {
+        ticks: { font: { size: 10 } },
+        grid: { display: false }
+      },
+      y: {
+        beginAtZero: true,
+        ticks: { font: { size: 10 } },
+        grid: { color: '#f0f0f0' }
+      }
+    }
+  }
+});
+
+</script>
+
+{% endblock %}

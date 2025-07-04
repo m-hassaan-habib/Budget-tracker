@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="flex justify-between items-center mb-6">
+  <h2 class="text-xl font-bold">All Expenses</h2>
+  <button
+    class="bg-[#0f8238] hover:bg-green-700 text-white text-sm px-4 py-2 rounded shadow-md"
+    data-bs-toggle="modal"
+    data-bs-target="#addExpenseModal">
+    + Add Expense
+  </button>
+</div>
+
+<section class="space-y-2">
+  {% for expense in expenses %}
+
+<article class="bg-white border border-gray-200 rounded-lg p-4 shadow-sm flex items-start justify-between gap-4">
+  <div class="flex-1">
+    <div class="flex flex-wrap items-center gap-4 mb-2">
+      <p class="font-bold text-lg text-gray-900">${{ expense.amount }}</p>
+      <div class="flex items-center text-gray-500 text-sm">
+        <i class="fas fa-tag mr-1"></i>{{ expense.category }}
+      </div>
+      <div class="flex items-center text-gray-500 text-sm">
+        <i class="fas fa-calendar-alt ml-4 mr-1"></i>{{ expense.date.strftime('%b %d, %Y') }}
+      </div>
+    </div>
+    {% if expense.note %}
+    <div class="flex items-center gap-2 text-gray-600 text-sm">
+      <i class="far fa-file-alt"></i>
+      <p>{{ expense.note }}</p>
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="flex flex-col justify-center items-center gap-3 text-sm">
+    <button
+      class="text-indigo-500 hover:text-blue-400"
+      data-bs-toggle="modal"
+      data-bs-target="#editExpenseModal{{ expense.id }}">
+      <i class="fas fa-edit"></i>
+    </button>
+    <a
+      href="{{ url_for('expenses.delete_expense', id=expense.id) }}"
+      class="text-amber-500 hover:text-red-400">
+      <i class="fas fa-trash-alt"></i>
+    </a>
+  </div>
+</article>
+
+
+  {% endfor %}
+
+  {% if not expenses %}
+  <p class="text-center text-gray-400 py-10">No expenses yet.</p>
+  {% endif %}
+</section>
+
+<!-- Add Expense Modal -->
+<div id="addExpenseModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 hidden">
+  <div class="bg-white rounded-lg border border-gray-200 shadow-xl w-full max-w-md p-6 relative">
+    <button onclick="closeModal('addExpenseModal')" class="absolute top-3 right-3 text-gray-400 hover:text-gray-600 text-xl">&times;</button>
+    <h2 class="text-lg font-semibold mb-4">Add Expense</h2>
+    <form method="POST" action="{{ url_for('expenses.add_expense') }}" class="space-y-4">
+      <div>
+        <label class="block text-sm font-medium mb-1">Amount</label>
+        <input type="number" name="amount" step="0.01" required class="w-full border border-gray-300 rounded-md shadow-sm focus:ring-[#0f8238] focus:border-[#0f8238] py-2 px-2">
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">Category</label>
+        <select name="category" required class="w-full border border-gray-300 rounded-md shadow-sm focus:ring-[#0f8238] focus:border-[#0f8238] py-2 px-2">
+          <option disabled selected value="">Select Category</option>
+          <option>Shopping</option>
+          <option>Snacking</option>
+          <option>Baby Food</option>
+          <option>Clothing</option>
+          <option>Eat Out</option>
+          <option>Outdoor</option>
+          <option>Lend Money</option>
+          <option>Household</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">Note (optional)</label>
+        <textarea name="note" rows="2" class="w-full border border-gray-300 rounded-md shadow-sm focus:ring-[#0f8238] focus:border-[#0f8238] px-2 py-1"></textarea>
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">Date</label>
+        <input type="date" name="date" value="{{ current_date }}" required class="w-full border border-gray-300 rounded-md shadow-sm focus:ring-[#0f8238] focus:border-[#0f8238] py-2 px-2">
+      </div>
+      <div class="text-right">
+        <button type="submit" class="bg-[#0f8238] text-white px-4 py-2 rounded shadow hover:bg-green-700">Add Expense</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Edit Expense Modals -->
+{% for expense in expenses %}
+<div id="editExpenseModal{{ expense.id }}" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 hidden">
+  <div class="bg-white rounded-lg border border-gray-200 shadow-xl w-full max-w-md p-6 relative">
+    <button onclick="closeModal('editExpenseModal{{ expense.id }}')" class="absolute top-3 right-3 text-gray-400 hover:text-gray-600 text-xl">&times;</button>
+    <h2 class="text-lg font-semibold mb-4">Edit Expense</h2>
+    <form method="POST" action="{{ url_for('expenses.edit_expense', id=expense.id) }}" class="space-y-4">
+      <input type="hidden" name="id" value="{{ expense.id }} ">
+      <div>
+        <label class="block text-sm font-medium mb-1">Amount</label>
+        <input type="number" step="0.01" name="amount" value="{{ expense.amount }}" required class="w-full border border-gray-300 rounded-md shadow-sm py-2 px-2">
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">Category</label>
+        <select name="category" required class="w-full border border-gray-300 rounded-md shadow-sm py-2 px-2">
+          {% for cat in ["Shopping","Snacking","Baby Food","Clothing","Eat Out","Outdoor","Lend Money","Household"] %}
+          <option value="{{ cat }}" {% if expense.category == cat %}selected{% endif %}>{{ cat }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">Note</label>
+        <textarea name="note" rows="2" class="w-full border border-gray-300 rounded-md shadow-sm py-1 px-2">{{ expense.note }}</textarea>
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">Date</label>
+        <input type="date" name="date" value="{{ expense.date }}" class="w-full border border-gray-300 rounded-md shadow-sm py-2 px-2">
+      </div>
+      <div class="text-right">
+        <button type="submit" class="bg-[#0f8238] text-white px-4 py-2 rounded shadow hover:bg-green-700">Update</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endfor %}
+
+<script>
+  function closeModal(id) {
+    document.getElementById(id)?.classList.add('hidden');
+  }
+
+  document.querySelectorAll('[data-bs-toggle="modal"]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const target = btn.getAttribute('data-bs-target')?.replace('#', '');
+      document.getElementById(target)?.classList.remove('hidden');
+    });
+  });
+</script>
+
+{% endblock %}

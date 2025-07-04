@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="max-w-5xl mx-auto grid gap-6 md:grid-cols-3">
+  <!-- Left column: Headings -->
+  <div class="space-y-6">
+    <div>
+      <h2 class="text-2xl font-bold text-[#0f8238]">Settings</h2>
+      <p class="text-sm text-gray-600">Adjust your budget and reset controls.</p>
+    </div>
+    <div class="space-y-6">
+      <div class="bg-white border border-gray-200 rounded-lg p-4 shadow-sm transition-transform transform hover:scale-[1.02] duration-200">
+        <h3 class="text-sm font-semibold text-gray-700 mb-2">Monthly Limit</h3>
+        <p class="text-sm text-gray-500">
+          Control how much you want to spend per month. This limit is shown on the dashboard.
+        </p>
+      </div>
+
+      <div class="bg-white border border-gray-200 rounded-lg p-4 shadow-sm transition-transform transform hover:scale-[1.02] duration-200">
+        <h3 class="text-sm font-semibold text-gray-700 mb-2">Total Savings</h3>
+        <p class="text-sm text-gray-500">
+          This is the manually entered total savings value. It updates every month.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right column: Forms -->
+  <div class="md:col-span-2 space-y-6">
+    <form method="POST" action="{{ url_for('settings.update_limit') }}" class="bg-white border border-gray-200 rounded-lg p-6 shadow-sm space-y-4">
+      <h3 class="text-lg font-semibold text-gray-800 mb-4">Update Budget</h3>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Monthly Expense Limit ($)</label>
+        <input type="number" step="0.01" name="limit" required value="{{ current_limit }}"
+               class="w-full h-12 border border-gray-300 rounded-md px-4 shadow-sm focus:ring-[#0f8238] focus:border-[#0f8238] transition-all duration-200">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Current Total Savings ($)</label>
+        <input type="number" step="0.01" name="savings" required value="{{ total_savings }}"
+               class="w-full h-12 border border-gray-300 rounded-md px-4 shadow-sm focus:ring-[#0f8238] focus:border-[#0f8238] transition-all duration-200">
+      </div>
+      <button type="submit"
+              class="mt-4 bg-[#0f8238] text-white px-5 py-2 rounded shadow transition-all duration-200 hover:scale-[1.03] hover:bg-green-700">
+        Save Changes
+      </button>
+    </form>
+
+    <form method="POST" action="{{ url_for('settings.end_month') }}"
+          class="bg-white border border-gray-200 rounded-lg p-6 shadow-sm space-y-4">
+      <h3 class="text-lg font-semibold text-gray-800 mb-4">End This Month</h3>
+      <p class="text-sm text-gray-600">This will archive income/expenses and move net savings into total.</p>
+      <button type="submit"
+              class="w-full bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded shadow transition-all duration-200 hover:scale-[1.03]">
+        End Month
+      </button>
+    </form>
+
+    <form method="POST" action="{{ url_for('settings.fresh_start') }}"
+          onsubmit="return confirm('Are you sure? This will permanently delete everything.')"
+          class="bg-white border border-red-300 rounded-lg p-6 shadow-sm space-y-4">
+      <h3 class="text-lg font-semibold text-red-600 mb-4">Fresh Start</h3>
+      <p class="text-sm text-gray-600">Resets everything: income, expenses, savings, limits, history.</p>
+      <button type="submit"
+              class="w-full border border-red-500 text-red-600 hover:bg-red-600 hover:text-white px-5 py-2 rounded shadow transition-all duration-200 hover:scale-[1.03]">
+        Reset Everything
+      </button>
+    </form>
+  </div>
+</div>
+
+{% endblock %}

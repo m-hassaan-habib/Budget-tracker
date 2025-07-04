@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Budget Tracker</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+  </style>
+</head>
+<body class="bg-[#f7f8fa]">
+    <nav class="bg-white shadow-sm border-b mb-6">
+        <div class="max-w-[1200px] mx-auto px-4 py-3 flex items-center justify-between">
+            <a href="{{ url_for('dashboard.index') }}" class="text-[#665191] font-bold text-lg flex items-center gap-2">
+            <i class="fas fa-wallet text-[#665191] text-3xl"></i>
+            Track ME!
+            </a>
+            <div class="flex items-center gap-4 text-sm text-gray-600">
+            <a href="{{ url_for('dashboard.index') }}" class="hover:text-[#0f8238]">Dashboard</a>
+            <a href="{{ url_for('expenses.index') }}" class="hover:text-[#0f8238]">Expenses</a>
+            <a href="{{ url_for('income.index') }}" class="hover:text-[#0f8238]">Income</a>
+            <a href="{{ url_for('history.index') }}" class="hover:text-[#0f8238]">History</a>
+            <a href="{{ url_for('settings.index') }}" class="hover:text-[#0f8238]">Settings</a>
+            </div>
+        </div>
+    </nav>
+  <div class="max-w-[1200px] mx-auto">
+    {% block content %}{% endblock %}
+  </div>
+</body>
+</html>

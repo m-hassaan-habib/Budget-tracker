@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="flex justify-between items-center mb-6">
+  <h2 class="text-xl font-bold">Income Streams</h2>
+  <button
+    class="bg-green-600 hover:bg-green-700 text-white text-sm px-4 py-2 rounded flex items-center gap-2 shadow"
+    data-bs-toggle="modal"
+    data-bs-target="#addIncomeModal">
+    <i class="fas fa-plus fa-sm"></i> Add Income
+  </button>
+</div>
+
+<section class="space-y-4">
+  {% for income in incomes %}
+  <div class="bg-white border border-gray-200 rounded-lg p-4 shadow-sm flex justify-between items-center">
+    <div>
+      <p class="font-semibold text-gray-900 select-text">{{ income.source }}</p>
+      <p class="text-gray-500 text-sm select-text">${{ income.amount }}</p>
+    </div>
+    <div class="flex items-center space-x-4">
+      <button
+        class="text-blue-600 hover:text-blue-700 transition-colors"
+        data-bs-toggle="modal"
+        data-bs-target="#editModal{{ income.id }}">
+        <i class="fas fa-pen fa-sm"></i>
+      </button>
+      <a
+        href="{{ url_for('income.delete_income', id=income.id) }}"
+        class="text-red-600 hover:text-red-700 transition-colors">
+        <i class="fas fa-trash fa-sm"></i>
+      </a>
+    </div>
+  </div>
+  {% endfor %}
+
+  {% if not incomes %}
+  <p class="text-center text-gray-400 py-10">No income added yet.</p>
+  {% endif %}
+</section>
+
+<!-- Add Income Modal -->
+<div id="addIncomeModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 hidden">
+  <div class="bg-white border border-gray-200 rounded-lg shadow-xl w-full max-w-md p-6 relative">
+    <button onclick="closeModal('addIncomeModal')" class="absolute top-3 right-3 text-gray-400 hover:text-gray-600 text-xl">&times;</button>
+    <h2 class="text-lg font-semibold mb-4">Add Income</h2>
+    <form method="POST" action="{{ url_for('income.add_income') }}" class="space-y-4">
+      <div>
+        <label class="block text-sm font-medium mb-1">Source</label>
+        <input type="text" name="source" required class="w-full h-12 border border-gray-300 rounded-md shadow-sm px-4 focus:ring-blue-600 focus:border-blue-600">
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">Amount</label>
+        <input type="number" name="amount" step="0.01" required class="w-full h-12 border border-gray-300 rounded-md shadow-sm px-4 focus:ring-blue-600 focus:border-blue-600">
+      </div>
+      <div class="text-right">
+        <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded shadow hover:bg-green-700">Add</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Edit Income Modals -->
+{% for income in incomes %}
+<div id="editModal{{ income.id }}" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 hidden">
+  <div class="bg-white border border-gray-200 rounded-lg shadow-xl w-full max-w-md p-6 relative">
+    <button onclick="closeModal('editModal{{ income.id }}')" class="absolute top-3 right-3 text-gray-400 hover:text-gray-600 text-xl">&times;</button>
+    <h2 class="text-lg font-semibold mb-4">Edit Income</h2>
+    <form method="POST" action="{{ url_for('income.edit_income', id=income.id) }}" class="space-y-4">
+      <div>
+        <label class="block text-sm font-medium mb-1">Source</label>
+        <input type="text" name="source" value="{{ income.source }}" required class="w-full h-12 border border-gray-300 rounded-md shadow-sm px-4 focus:ring-blue-600 focus:border-blue-600">
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">Amount</label>
+        <input type="number" name="amount" value="{{ income.amount }}" step="0.01" required class="w-full h-12 border border-gray-300 rounded-md shadow-sm px-4 focus:ring-blue-600 focus:border-blue-600">
+      </div>
+      <div class="text-right">
+        <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded shadow hover:bg-green-700">Update</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endfor %}
+
+<script>
+  function closeModal(id) {
+    document.getElementById(id)?.classList.add('hidden');
+  }
+
+  document.querySelectorAll('[data-bs-toggle="modal"]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const target = btn.getAttribute('data-bs-target')?.replace('#', '');
+      document.getElementById(target)?.classList.remove('hidden');
+    });
+  });
+</script>
+
+{% endblock %}
