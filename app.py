@@ -26,4 +26,15 @@ def create_app():
 
     return app
 
+
+
 app = create_app()
+
+
+def clamp_filter(value, min_val=0, max_val=100):
+    try:
+        return max(min(float(value), max_val), min_val)
+    except (ValueError, TypeError):
+        return 0
+
+app.jinja_env.filters['clamp'] = clamp_filter
