@@ -20,7 +20,9 @@
       <span>${{ monthly_limit }}</span>
     </div>
     <div class="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
-      <div class="h-full bg-[#1e90ff] rounded-full transition-all duration-700" style="width: {{ (monthly_limit / total_income * 100 if monthly_limit else 0) | round(1) }}%;"></div>
+      <div class="h-full bg-[#1e90ff] rounded-full transition-all duration-700"
+          style="width: {{ ((monthly_limit / total_income * 100) if (monthly_limit and total_income) else 0) | round(1) }}%;">
+      </div>
     </div>
   </div>
 
