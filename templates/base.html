@@ -6,10 +6,30 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap">
+  <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
   <style>
-    body { font-family: 'Inter', sans-serif; }
+    body { 
+      font-family: 'Inter', sans-serif; 
+    }
+
+    .select2-container .select2-selection--single {
+      height: 42px !important;
+    }
+
+    .select2-container--default .select2-selection--single .select2-selection__rendered {
+      line-height: 38px !important;
+      padding-left: 10px !important;
+    }
+
+    .select2-container--default .select2-selection--single .select2-selection__arrow {
+        height: 38px !important;
+        right: 10px !important;
+    }
   </style>
 </head>
 <body class="bg-[#f7f8fa]">

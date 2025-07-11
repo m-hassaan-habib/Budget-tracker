@@ -68,16 +68,24 @@
       </div>
       <div>
         <label class="block text-sm font-medium mb-1">Category</label>
-        <select name="category" required class="w-full border border-gray-300 rounded-md shadow-sm focus:ring-[#0f8238] focus:border-[#0f8238] py-2 px-2">
+        <select name="category" class="select2 w-full border border-gray-300 rounded-md shadow-sm py-2 px-2" required>
           <option disabled selected value="">Select Category</option>
-          <option>Shopping</option>
-          <option>Snacking</option>
+          <option>Acessories</option>
           <option>Baby Food</option>
+          <option>Bills</option>
           <option>Clothing</option>
           <option>Eat Out</option>
-          <option>Outdoor</option>
+          <option>Family Gift</option>
+          <option>Food Delivery</option>
+          <option>Grocery</option>
+          <option>Household Expense</option>
+          <option>Investment</option>
           <option>Lend Money</option>
-          <option>Household</option>
+          <option>Outdoor</option>
+          <option>Repair</option>
+          <option>Shopping</option>
+          <option>Snacking</option>
+          <option>Travel</option>
         </select>
       </div>
       <div>
@@ -109,10 +117,28 @@
       </div>
       <div>
         <label class="block text-sm font-medium mb-1">Category</label>
-        <select name="category" required class="w-full border border-gray-300 rounded-md shadow-sm py-2 px-2">
-          {% for cat in ["Shopping","Snacking","Baby Food","Clothing","Eat Out","Outdoor","Lend Money","Household"] %}
+        <select name="category" class="select2 w-full border border-gray-300 rounded-md shadow-sm py-2 px-2" required>
+          {% for cat in [
+            "Acessories",
+            "Baby Food",
+            "Bills",
+            "Clothing",
+            "Eat Out",
+            "Family Gift",
+            "Food Delivery",
+            "Grocery",
+            "Household Expense",
+            "Investment",
+            "Lend Money",
+            "Outdoor",
+            "Repair",
+            "Shopping",
+            "Snacking",
+            "Travel"
+          ] %}
           <option value="{{ cat }}" {% if expense.category == cat %}selected{% endif %}>{{ cat }}</option>
           {% endfor %}
+
         </select>
       </div>
       <div>
@@ -143,5 +169,21 @@
     });
   });
 </script>
+<script>
+  $(document).ready(function() {
+    $('.select2').select2({
+      width: '100%',
+      dropdownParent: $('#addExpenseModal')
+    });
+
+    {% for expense in expenses %}
+    $('#editExpenseModal{{ expense.id }} .select2').select2({
+      width: '100%',
+      dropdownParent: $('#editExpenseModal{{ expense.id }}')
+    });
+    {% endfor %}
+  });
+</script>
+
 
 {% endblock %}
