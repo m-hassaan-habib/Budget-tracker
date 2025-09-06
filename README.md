@@ -1,6 +1,6 @@
 # Budget Tracker
 
-A responsive, full-featured web application to manage your income, expenses, and savings. Built with Flask, PostgreSQL, and Tailwind CSS, it provides a modern UI, charts, and a clear financial overview.
+A responsive, full-featured web application to manage your income, expenses, and savings. Built with Flask, MySQL, and Tailwind CSS, it provides a modern UI, charts, and a clear financial overview.
 
 ## Features
 
@@ -14,8 +14,8 @@ A responsive, full-featured web application to manage your income, expenses, and
 
 ## Tech Stack
 
-- **Backend**: Flask (Python 3.11+), SQLAlchemy
-- **Database**: PostgreSQL (or SQLite for dev)
+- **Backend**: Flask (Python 3.11+), MySQL
+- **Database**: MySQL (or SQLite for dev)
 - **Frontend**: Jinja2 templates + Tailwind CSS
 - **Charts**: Chart.js
 - **Icons**: Font Awesome
@@ -27,7 +27,7 @@ A responsive, full-featured web application to manage your income, expenses, and
 ```bash
 git clone https://github.com/yourusername/budget-tracker.git
 cd budget-tracker
-````
+```
 
 ### 2. Create virtual environment
 
@@ -48,24 +48,23 @@ Create a `.env` file:
 
 ```ini
 FLASK_APP=app.py
-FLASK_ENV=development
-DATABASE_URL=postgresql://user:password@localhost/budget_db
+FLASK_ENV=production
+MYSQL_HOST=host-name
+MYSQL_USER=user-name
+MYSQL_PASSWORD=your-secure-password
+MYSQL_DATABASE=budget_tracker
 SECRET_KEY=your-secret-key
 ```
 
-### 5. Initialize the database
+### 5. Create a MySQL database (e.g. budget_tracker).
+
+### 6. Initialize the database
 
 ```bash
-flask db upgrade
+python init_db.py
 ```
 
-Or if using SQLite for dev:
-
-```bash
-python setup_db.py
-```
-
-### 6. Run the app
+### 7. Run the app
 
 ```bash
 flask run
@@ -96,5 +95,3 @@ Use Gunicorn with a production WSGI server:
 ```bash
 gunicorn -w 4 app:app
 ```
-
-Use PostgreSQL in production and configure the `DATABASE_URL` accordingly.
