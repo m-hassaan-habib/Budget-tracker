@@ -33,7 +33,7 @@
             {% for inc in incomes %}
             <tr class="border-t">
               <td class="px-4 py-2">{{ inc.source }}</td>
-              <td class="px-4 py-2">${{ inc.amount }}</td>
+              <td class="px-4 py-2">Rs. {{ inc.amount }}</td>
             </tr>
             {% endfor %}
           </tbody>
@@ -61,7 +61,7 @@
           <tbody>
             {% for exp in expenses %}
             <tr class="border-t">
-              <td class="px-4 py-2">${{ exp.amount }}</td>
+              <td class="px-4 py-2">Rs. {{ exp.amount }}</td>
               <td class="px-4 py-2">{{ exp.category }}</td>
               <td class="px-4 py-2">{{ exp.note or "" }}</td>
               <td class="px-2 py-2 text-[10px]">{{ exp.date }}</td>
