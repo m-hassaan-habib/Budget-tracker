@@ -12,11 +12,11 @@
       <i class="fas fa-money-bill-wave fa-lg"></i>
     </div>
     <h3 class="text-xs font-semibold mb-1">Total Income</h3>
-    <p class="text-[#1e90ff] font-extrabold text-xl sm:text-2xl">${{ total_income }}</p>
+    <p class="text-[#1e90ff] font-extrabold text-xl sm:text-2xl">Rs. {{ total_income }}</p>
     <p class="text-gray-500 text-xs sm:text-sm mt-1">Monthly income</p>
     <div class="flex justify-between items-center text-sm font-medium text-gray-700 mb-1">
       <span>vs. Limit</span>
-      <span>${{ monthly_limit }}</span>
+      <span>Rs. {{ monthly_limit }}</span>
     </div>
     <div class="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
       <div class="h-full bg-[#1e90ff] rounded-full transition-all duration-700"
@@ -30,11 +30,11 @@
       <i class="fas fa-receipt fa-lg"></i>
     </div>
     <h3 class="text-sm font-semibold mb-1">Monthly Expenses</h3>
-    <p class="text-[#f3703f] font-extrabold text-xl sm:text-2xl">${{ total_expenses }}</p>
+    <p class="text-[#f3703f] font-extrabold text-xl sm:text-2xl">Rs. {{ total_expenses }}</p>
     <p class="text-gray-500 text-xs sm:text-sm mt-1">This month's spending</p>
     <div class="flex justify-between items-center text-sm font-medium text-gray-700 mb-1">
       <span>rm. Limit</span>
-      <span>${{ (monthly_limit - total_expenses) | round(2) }}</span>
+      <span>Rs. {{ (monthly_limit - total_expenses) | round(2) }}</span>
     </div>
     <div class="group relative w-full">
       <div class="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
@@ -56,7 +56,7 @@
       <i class="fas fa-chart-line fa-lg"></i>
     </div>
     <h3 class="text-xs font-semibold mb-1">Net Savings</h3>
-    <p class="text-[#0f8238] font-extrabold text-xl sm:text-2xl">${{ net_savings }}</p>
+    <p class="text-[#0f8238] font-extrabold text-xl sm:text-2xl">Rs. {{ net_savings }}</p>
     <p class="text-gray-500 text-xs sm:text-sm mt-1">Income - Expenses</p>
     <div class="flex justify-between items-center text-sm font-medium text-gray-700 mb-1">
       <span>per. Income</span>
@@ -79,7 +79,7 @@
       <i class="fas fa-credit-card fa-lg"></i>
     </div>
     <h3 class="text-xs font-semibold mb-1">Total Savings</h3>
-    <p class="text-[#6466f1] font-extrabold text-xl sm:text-2xl">${{ total_savings }}</p>
+    <p class="text-[#6466f1] font-extrabold text-xl sm:text-2xl">Rs. {{ total_savings }}</p>
     <p class="text-gray-500 text-xs sm:text-sm mt-1">Accumulated savings</p>
     <div class="flex justify-between items-center text-sm font-medium text-gray-700 mb-1">
       <span>vs. Goal</span>
