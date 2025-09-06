@@ -21,7 +21,7 @@ def index():
             cur.execute("SELECT monthly_limit, total_savings FROM setting LIMIT 1")
             setting = cur.fetchone()
             monthly_limit = float(setting['monthly_limit']) if setting else 0
-            total_savings = float(setting['total_savings']) if setting else 0
+            total_savings = (float(setting['total_savings']) + float(net_savings)) if setting else 0
 
             # Pie chart (category-wise)
             cur.execute("SELECT category, SUM(amount) AS total FROM expense GROUP BY category")
