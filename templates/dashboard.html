@@ -174,7 +174,7 @@ new Chart(document.getElementById('categoryChart'), {
   },
   options: {
     responsive: true,
-    maintainAspectRatio: false,
+    maintainAspectRatio: true,
     scales: {
       x: {
         grid: { display: false },
@@ -184,6 +184,7 @@ new Chart(document.getElementById('categoryChart'), {
         barPercentage: 0.6
       },
       y: {
+        grid: { display: false },
         beginAtZero: true,
         ticks: { font: { size: 10 } }
       }
@@ -195,52 +196,55 @@ new Chart(document.getElementById('categoryChart'), {
 });
 
 
-new Chart(document.getElementById('savingsChart'), {
+const el = document.getElementById('savingsChart');
+const ctx = el.getContext('2d');
+const SAVINGS = {{ savings_values|tojson }};
+
+new Chart(ctx, {
   type: 'line',
   data: {
     labels: {{ savings_labels|tojson }},
     datasets: [{
       label: 'Savings',
-      data: {{ savings_values|tojson }},
-      fill: false,
-      borderColor: '#0f8238',        // consistent green
-      backgroundColor: '#0f8238',
+      data: SAVINGS,
+      fill: 'start',
+      borderColor: '#663399',
+      backgroundColor: (c) => {
+        const {ctx, chartArea} = c.chart;
+        if (!chartArea) return null;
+        const g = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+        g.addColorStop(0.4, 'rgba(102,51,153,0.9)');
+        g.addColorStop(0.75, 'rgba(102,51,153,0.5)');
+        g.addColorStop(1.0, 'rgba(255,255,255,0.0)');
+        return g;
+      },
       pointRadius: 3,
       pointHoverRadius: 5,
-      pointBackgroundColor: '#10b981',
+      pointBackgroundColor: '#663399',
       pointBorderWidth: 1,
-      tension: 0.4                    // smooth curves
+      tension: 0.4
     }]
   },
   options: {
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
-      legend: {
-        display: true,
-        labels: {
-          color: '#333',
-          font: { size: 12 }
-        }
-      },
-      tooltip: {
-        mode: 'index',
-        intersect: false
-      }
+      legend: { display: true, labels: { color: '#333', font: { size: 12 } } },
+      tooltip: { mode: 'index', intersect: false }
     },
     scales: {
-      x: {
-        ticks: { font: { size: 10 } },
-        grid: { display: false }
-      },
+      x: { ticks: { font: { size: 10 } }, grid: { display: false } },
       y: {
         beginAtZero: true,
+        suggestedMax: Math.max(...SAVINGS) * 2,
         ticks: { font: { size: 10 } },
-        grid: { color: '#f0f0f0' }
+        grid: { display: false }
       }
     }
   }
 });
+
+
 
 </script>
 

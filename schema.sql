@@ -1,0 +1,35 @@
+CREATE TABLE IF NOT EXISTS income (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    source VARCHAR(100) NOT NULL,
+    amount DECIMAL(10, 2) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS expense (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    amount DECIMAL(10, 2) NOT NULL,
+    category VARCHAR(50) NOT NULL,
+    note TEXT,
+    date DATE NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS setting (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    monthly_limit DECIMAL(10, 2) NOT NULL DEFAULT 0.0,
+    total_savings DECIMAL(10, 2) DEFAULT 0.0
+);
+
+CREATE TABLE IF NOT EXISTS archived_income (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    source VARCHAR(100) NOT NULL,
+    amount DECIMAL(10, 2) NOT NULL,
+    month VARCHAR(20) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS archived_expense (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    amount DECIMAL(10, 2) NOT NULL,
+    category VARCHAR(50) NOT NULL,
+    note TEXT,
+    date DATE NOT NULL,
+    month VARCHAR(20) NOT NULL
+);
