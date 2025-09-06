@@ -1,12 +1,5 @@
 flask
-flask_sqlalchemy
 psycopg2-binary
-flask-migrate
-python-dotenv
-flask_sqlalchemy 
-flask_migrate
-Flask
-flask_sqlalchemy
-flask_migrate
+python-dotenv 
 psycopg2-binary
-python-dotenv
+mysql-connector-python
