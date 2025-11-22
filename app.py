@@ -12,6 +12,11 @@ from routes.categories import categories_bp
 def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
+
+    if not app.config.get("SECRET_KEY"):
+        import secrets
+        app.config["SECRET_KEY"] = secrets.token_hex(32)
+
     Config.init_db(app)
 
     os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
