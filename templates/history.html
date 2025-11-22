@@ -17,7 +17,6 @@
   </form>
 
   <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-    <!-- Income Section -->
     <div class="bg-white border border-gray-200 rounded-lg shadow-sm p-4">
       <h3 class="text-lg font-semibold mb-4">Income</h3>
       {% if incomes %}
@@ -44,36 +43,67 @@
       {% endif %}
     </div>
 
-    <!-- Expenses Section -->
     <div class="bg-white border border-gray-200 rounded-lg shadow-sm p-4">
       <h3 class="text-lg font-semibold mb-4">Expenses</h3>
+
       {% if expenses %}
-      <div class="block md:hidden space-y-4">
-        <table class="w-full text-xs text-left text-gray-700 border border-gray-100">
-          <thead class="bg-gray-100 text-gray-600">
-            <tr>
-              <th class="px-4 py-2">Amount</th>
-              <th class="px-4 py-2">Category</th>
-              <th class="px-4 py-2">Note</th>
-              <th class="px-2 py-2">Date</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for exp in expenses %}
-            <tr class="border-t">
-              <td class="px-4 py-2">Rs. {{ exp.amount }}</td>
-              <td class="px-4 py-2">{{ exp.category }}</td>
-              <td class="px-4 py-2">{{ exp.note or "" }}</td>
-              <td class="px-2 py-2 text-[10px]">{{ exp.date }}</td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
+
+      <div class="max-h-[400px] overflow-y-auto pr-1">
+
+        <div class="hidden md:block overflow-x-auto">
+          <table class="w-full text-sm text-left text-gray-700 border border-gray-100">
+            <thead class="bg-gray-100 text-gray-600">
+              <tr>
+                <th class="px-4 py-2">Amount</th>
+                <th class="px-4 py-2">Category</th>
+                <th class="px-4 py-2">Note</th>
+                <th class="px-4 py-2">Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for exp in expenses %}
+              <tr class="border-t">
+                <td class="px-4 py-2">Rs. {{ exp.amount }}</td>
+                <td class="px-4 py-2">{{ exp.category }}</td>
+                <td class="px-4 py-2">{{ exp.note or "" }}</td>
+                <td class="px-4 py-2">{{ exp.date }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <div class="block md:hidden space-y-4">
+          <table class="w-full text-xs text-left text-gray-700 border border-gray-100">
+            <thead class="bg-gray-100 text-gray-600">
+              <tr>
+                <th class="px-4 py-2">Amount</th>
+                <th class="px-4 py-2">Category</th>
+                <th class="px-4 py-2">Note</th>
+                <th class="px-2 py-2">Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for exp in expenses %}
+              <tr class="border-t">
+                <td class="px-4 py-2">Rs. {{ exp.amount }}</td>
+                <td class="px-4 py-2">{{ exp.category }}</td>
+                <td class="px-4 py-2">{{ exp.note or "" }}</td>
+                <td class="px-2 py-2 text-[10px]">{{ exp.date }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
       </div>
+
       {% else %}
       <p class="text-sm text-gray-400 text-center py-4">No expenses</p>
       {% endif %}
     </div>
+
+
   </div>
 </div>
 

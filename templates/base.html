@@ -13,9 +13,9 @@
   <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
   <style>
-    body { 
-      font-family: 'Inter', sans-serif; 
-      overflow-x: hidden; /* Prevent horizontal scrolling */
+    body {
+      font-family: 'Inter', sans-serif;
+      overflow-x: hidden;
     }
 
     .select2-container .select2-selection--single {
@@ -32,7 +32,6 @@
       right: 10px !important;
     }
 
-    /* Ensure modals and charts stay within viewport */
     .modal-content, canvas {
       max-width: 100vw;
     }
@@ -46,23 +45,30 @@
   </style>
 </head>
 <body class="bg-[#f7f8fa]">
+
+    {% if not hide_nav %}
     <nav class="bg-white shadow-sm border-b mb-6">
-        <div class="container mx-auto px-4 py-3 flex flex-col sm:flex-row items-center justify-between">
-            <a href="{{ url_for('dashboard.index') }}" class="text-[#665191] font-bold text-lg flex items-center gap-2 mb-2 sm:mb-0">
-            <i class="fas fa-wallet text-[#665191] text-3xl"></i>
-            Track ME!
-            </a>
-            <div class="flex flex-wrap items-center gap-4 text-sm text-gray-600">
-            <a href="{{ url_for('dashboard.index') }}" class="hover:text-[#0f8238]">Dashboard</a>
-            <a href="{{ url_for('expenses.index') }}" class="hover:text-[#0f8238]">Expenses</a>
-            <a href="{{ url_for('income.index') }}" class="hover:text-[#0f8238]">Income</a>
-            <a href="{{ url_for('history.index') }}" class="hover:text-[#0f8238]">History</a>
-            <a href="{{ url_for('settings.index') }}" class="hover:text-[#0f8238]">Settings</a>
-            </div>
-        </div>
+      <div class="container mx-auto px-4 py-3 flex flex-col sm:flex-row items-center justify-between">
+          <a href="{{ url_for('dashboard.index') }}" class="text-[#665191] font-bold text-lg flex items-center gap-2 mb-2 sm:mb-0">
+          <i class="fas fa-wallet text-[#665191] text-3xl"></i>
+          Track ME!
+          </a>
+          <div class="flex flex-wrap items-center gap-4 text-sm text-gray-600">
+              <a href="{{ url_for('dashboard.index') }}" class="hover:text-[#0f8238]">Dashboard</a>
+              <a href="{{ url_for('expenses.index') }}" class="hover:text-[#0f8238]">Expenses</a>
+              <a href="{{ url_for('income.index') }}" class="hover:text-[#0f8238]">Income</a>
+              <a href="{{ url_for('history.index') }}" class="hover:text-[#0f8238]">History</a>
+              <a href="{{ url_for('settings.index') }}" class="hover:text-[#0f8238]">Settings</a>
+              <a href="{{ url_for('auth.logout') }}" class="hover:text-red-600">Logout</a>
+          </div>
+      </div>
     </nav>
-  <div class="container mx-auto px-4">
-    {% block content %}{% endblock %}
-  </div>
+    {% endif %}
+
+
+    <div class="container mx-auto px-4">
+        {% block content %}{% endblock %}
+    </div>
 </body>
+
 </html>

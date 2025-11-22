@@ -5,12 +5,20 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+
 class Config:
     SECRET_KEY = os.getenv('SECRET_KEY')
     MYSQL_HOST = os.getenv('MYSQL_HOST')
     MYSQL_USER = os.getenv('MYSQL_USER')
     MYSQL_PASSWORD = os.getenv('MYSQL_PASSWORD')
     MYSQL_DATABASE = os.getenv('MYSQL_DATABASE', 'budget_db')
+
+    UPLOAD_FOLDER = os.path.join(BASE_DIR, 'uploads')
+    AVATAR_FOLDER = os.path.join(UPLOAD_FOLDER, 'avatars')
+    RECEIPT_FOLDER = os.path.join(UPLOAD_FOLDER, 'receipts')
+    MAX_CONTENT_LENGTH = 5 * 1024 * 1024
+    ALLOWED_ATTACH_EXT = {"pdf", "png", "jpg", "jpeg", "doc", "JPG"}
 
     @staticmethod
     def init_db(app):

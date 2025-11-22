@@ -1,25 +1,39 @@
+CREATE TABLE IF NOT EXISTS users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    email VARCHAR(150) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    avatar_filename VARCHAR(255) DEFAULT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE TABLE IF NOT EXISTS income (
     id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
     source VARCHAR(100) NOT NULL,
     amount DECIMAL(10, 2) NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS expense (
     id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
     amount DECIMAL(10, 2) NOT NULL,
     category VARCHAR(50) NOT NULL,
     note TEXT,
-    date DATE NOT NULL
+    date DATE NOT NULL,
+    attachment VARCHAR(255) DEFAULT NULL
 );
 
 CREATE TABLE IF NOT EXISTS setting (
     id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
     monthly_limit DECIMAL(10, 2) NOT NULL DEFAULT 0.0,
     total_savings DECIMAL(10, 2) DEFAULT 0.0
 );
 
 CREATE TABLE IF NOT EXISTS archived_income (
     id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
     source VARCHAR(100) NOT NULL,
     amount DECIMAL(10, 2) NOT NULL,
     month VARCHAR(20) NOT NULL
@@ -27,9 +41,25 @@ CREATE TABLE IF NOT EXISTS archived_income (
 
 CREATE TABLE IF NOT EXISTS archived_expense (
     id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
     amount DECIMAL(10, 2) NOT NULL,
     category VARCHAR(50) NOT NULL,
     note TEXT,
     date DATE NOT NULL,
     month VARCHAR(20) NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS categories (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    name VARCHAR(50) NOT NULL,
+    UNIQUE KEY user_category_unique (user_id, name)
+);
+
+ALTER TABLE income ADD COLUMN user_id INT NOT NULL;
+ALTER TABLE expense ADD COLUMN user_id INT NOT NULL;
+ALTER TABLE setting ADD COLUMN user_id INT NOT NULL;
+ALTER TABLE archived_income ADD COLUMN user_id INT NOT NULL;
+ALTER TABLE archived_expense ADD COLUMN user_id INT NOT NULL;
+
+ALTER TABLE expense ADD COLUMN attachment VARCHAR(255) NULL;
