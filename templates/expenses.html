@@ -21,51 +21,63 @@
 
 <section class="space-y-2">
   {% for expense in expenses %}
-    <article class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm flex items-start justify-between gap-4">
-      <div class="flex-1">
-        <div class="flex flex-wrap items-center gap-2 mb-2">
-          <p class="font-bold text-lg text-gray-900">Rs. {{ expense.amount }}</p>
-          <div class="flex items-center text-gray-500 text-xs">
-            <i class="fas fa-tag mr-1"></i>{{ expense.category }}
-          </div>
-          <div class="flex items-center text-gray-500 text-xs">
-            <i class="fas fa-calendar-alt ml-4 mr-1"></i>{{ expense.date.strftime('%b %d, %Y') }}
-          </div>
+  <article
+    onclick="window.location='{{ url_for('expenses.view_expense', id=expense.id) }}'"
+    class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm flex items-start justify-between gap-4 cursor-pointer hover:shadow-md transition"
+  >
+    <div class="flex-1">
+      <div class="flex flex-wrap items-center gap-2 mb-2">
+        <p class="font-bold text-lg text-gray-900">Rs. {{ expense.amount }}</p>
+
+        <div class="flex items-center text-gray-500 text-xs">
+          <i class="fas fa-tag mr-1"></i>{{ expense.category }}
         </div>
-        {% if expense.note %}
-        <div class="flex items-center gap-2 text-gray-600 text-sm">
-          <i class="far fa-file-alt"></i>
-          <p>{{ expense.note }}</p>
+
+        <div class="flex items-center text-gray-500 text-xs">
+          <i class="fas fa-calendar-alt ml-4 mr-1"></i>{{ expense.date.strftime('%b %d, %Y') }}
+        </div>
+
+        {% if expense.attachment %}
+        <div class="flex items-center text-gray-500 text-xs ml-4">
+          <i class="fas fa-paperclip mr-1"></i> Attachment
         </div>
         {% endif %}
       </div>
 
-      <div class="flex flex-col justify-center items-center gap-3 text-sm">
-        <button
-          class="text-indigo-500 hover:text-blue-400"
-          data-bs-toggle="modal"
-          data-bs-target="#editExpenseModal{{ expense.id }}">
-          <i class="fas fa-edit"></i>
-        </button>
-        <a
-          href="{{ url_for('expenses.delete_expense', id=expense.id) }}"
-          class="text-amber-500 hover:text-red-400">
-          <i class="fas fa-trash-alt"></i>
-        </a>
+      {% if expense.note %}
+      <div class="flex items-center gap-2 text-gray-600 text-sm">
+        <i class="far fa-file-alt"></i>
+        <p>{{ expense.note }}</p>
       </div>
-    </article>
-  {% endfor %}
+      {% endif %}
+    </div>
 
-  {% if not expenses %}
-  <p class="text-center text-gray-400 py-10">No expenses yet.</p>
-  {% endif %}
+    <div class="flex flex-col justify-center items-center gap-3 text-sm">
+      <button
+        class="text-indigo-500 hover:text-blue-400"
+        onclick="event.stopPropagation();"
+        data-bs-toggle="modal"
+        data-bs-target="#editExpenseModal{{ expense.id }}">
+        <i class="fas fa-edit"></i>
+      </button>
+
+      <a href="{{ url_for('expenses.delete_expense', id=expense.id) }}"
+        onclick="event.stopPropagation();"
+        class="text-amber-500 hover:text-red-400">
+        <i class="fas fa-trash-alt"></i>
+      </a>
+    </div>
+  </article>
+
+  {% endfor %}
 </section>
+
 
 <div id="addExpenseModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 hidden">
   <div class="bg-white rounded-lg border border-gray-200 shadow-xl w-full max-w-md p-6 mx-4">
     <button onclick="closeModal('addExpenseModal')" class="absolute top-3 right-3 text-gray-400 hover:text-gray-600 text-xl">&times;</button>
     <h2 class="text-lg font-semibold mb-4">Add Expense</h2>
-    <form method="POST" action="{{ url_for('expenses.add_expense') }}" class="space-y-4">
+    <form method="POST" action="{{ url_for('expenses.add_expense') }}" enctype="multipart/form-data" class="space-y-4">
       <div>
         <label class="block text-sm font-medium mb-1">Amount</label>
         <input type="number" name="amount" step="0.01" required class="w-full border border-gray-300 rounded-md shadow-sm focus:ring-[#0f8238] focus:border-[#0f8238] py-2 px-2">
@@ -142,6 +154,11 @@
       <div>
         <label class="block text-sm font-medium mb-1">Date</label>
         <input type="date" name="date" value="{{ current_date }}" required class="w-full border border-gray-300 rounded-md shadow-sm focus:ring-[#0f8238] focus:border-[#0f8238] py-2 px-2">
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">Receipt (optional)</label>
+        <input type="file" name="attachment" class="w-full text-sm border border-gray-300 rounded-md p-1">
+        <p class="text-[11px] text-gray-500 mt-1">Accepted: PDF, PNG, JPG</p>
       </div>
       <div class="text-right">
         <button type="submit" class="bg-[#0f8238] text-white px-4 py-2 rounded shadow hover:bg-green-700">Add Expense</button>
@@ -233,6 +250,15 @@
       <div>
         <label class="block text-sm font-medium mb-1">Date</label>
         <input type="date" name="date" value="{{ expense.date }}" class="w-full border border-gray-300 rounded-md shadow-sm py-2 px-2">
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">Receipt (optional)</label>
+        <input type="file" name="attachment" class="w-full text-sm border border-gray-300 rounded-md p-1">
+        {% if expense.attachment %}
+        <a href="{{ url_for('receipt_file', filename=expense.attachment) }}"
+          target="_blank"
+          class="text-xs text-purple-600 underline block mt-1">View Current</a>
+        {% endif %}
       </div>
       <div class="text-right">
         <button type="submit" class="bg-[#0f8238] text-white px-4 py-2 rounded shadow hover:bg-green-700">Update</button>

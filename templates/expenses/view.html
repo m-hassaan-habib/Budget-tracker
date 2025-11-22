@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% block content %}
+<style>
+.magnify-container {
+    overflow: hidden;
+}
+
+.magnify-img.magnify-zoom {
+    transform: scale(3);
+    cursor: zoom-in;
+}
+
+.magnify-img {
+    will-change: transform;
+    transform: translateZ(0);
+    transition: transform 0.5s ease;
+}
+</style>
+
+
+<div class="max-w-2xl mx-auto bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+
+  <h2 class="text-xl font-bold mb-4">Expense Details</h2>
+
+  <div class="space-y-3">
+
+    <p class="text-lg font-semibold">Rs. {{ expense.amount }}</p>
+
+    <p class="text-sm text-gray-600 flex items-center gap-2">
+      <i class="fas fa-tag text-gray-400"></i> {{ expense.category }}
+    </p>
+
+    <p class="text-sm text-gray-600 flex items-center gap-2">
+      <i class="fas fa-calendar-alt text-gray-400"></i>
+      {{ expense.date.strftime('%B %d, %Y') }}
+    </p>
+
+    {% if expense.note %}
+    <p class="text-sm text-gray-700">{{ expense.note }}</p>
+    {% endif %}
+
+    <hr class="my-4">
+
+    <h3 class="font-semibold text-lg mb-3">Attachments</h3>
+
+    {% if expense.attachment %}
+    <div class="space-y-3">
+
+      {# Check file extension #}
+      {% set ext = expense.attachment.split('.')[-1].lower() %}
+
+      {% if ext in ['png','jpg','jpeg','webp'] %}
+        <div class="receipt-magnifier w-full max-w-xl mx-auto border rounded-lg bg-white shadow-sm overflow-hidden">
+            <div class="magnify-container relative w-full h-[350px] cursor-zoom-in">
+                <img
+                    src="{{ url_for('receipt_file', filename=expense.attachment) }}"
+                    class="magnify-img w-full h-full object-contain transition-transform duration-200"
+                    alt="Receipt Preview"
+                >
+            </div>
+        </div>
+      {% else %}
+
+        <a
+          href="{{ url_for('receipt_file', filename=expense.attachment) }}"
+          target="_blank"
+          class="inline-flex items-center gap-2 px-3 py-1.5 text-sm border rounded-lg bg-gray-50 hover:bg-gray-100 transition"
+        >
+          <i class="fas fa-paperclip text-gray-600"></i>
+          {{ expense.attachment }}
+        </a>
+
+      {% endif %}
+
+    </div>
+    {% else %}
+    <p class="text-sm text-gray-400">No attachments</p>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const container = document.querySelector(".magnify-container");
+    const img = document.querySelector(".magnify-img");
+
+    container.addEventListener("mouseenter", function () {
+        img.classList.add("magnify-zoom");
+    });
+
+    container.addEventListener("mousemove", function (e) {
+        const rect = container.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+
+        img.style.transformOrigin = `${x}px ${y}px`;
+    });
+
+    container.addEventListener("mouseleave", function () {
+        img.classList.remove("magnify-zoom");
+        img.style.transformOrigin = "center center";
+    });
+});
+</script>
+{% endblock %}

@@ -1,54 +1,58 @@
-from flask import Blueprint, render_template, current_app
+from flask import Blueprint, render_template, current_app, session
+from auth_utils import login_required
 
 dashboard_bp = Blueprint('dashboard', __name__, url_prefix='')
 
 @dashboard_bp.route('/')
+@login_required
 def index():
     conn = current_app.db_pool.get_connection()
     try:
         with conn.cursor(dictionary=True) as cur:
-            # Total income
-            cur.execute("SELECT COALESCE(SUM(amount), 0) AS total FROM income")
+            cur.execute("SELECT COALESCE(SUM(amount), 0) AS total FROM income WHERE user_id=%s", (session['user_id'],))
             total_income = float(cur.fetchone()['total'])
 
-            # Total expenses
-            cur.execute("SELECT COALESCE(SUM(amount), 0) AS total FROM expense")
+            cur.execute("SELECT COALESCE(SUM(amount), 0) AS total FROM expense WHERE user_id=%s", (session['user_id'],))
             total_expenses = float(cur.fetchone()['total'])
 
             net_savings = total_income - total_expenses
 
-            # Budget status
-            cur.execute("SELECT monthly_limit, total_savings FROM setting LIMIT 1")
+            cur.execute("SELECT monthly_limit, total_savings FROM setting WHERE user_id=%s LIMIT 1", (session['user_id'],))
             setting = cur.fetchone()
             monthly_limit = float(setting['monthly_limit']) if setting else 0
-            total_savings = (float(setting['total_savings']) + float(net_savings)) if setting else 0
+            total_savings = float(setting['total_savings']) if setting else 0
 
-            # Pie chart (category-wise)
-            cur.execute("SELECT category, SUM(amount) AS total FROM expense GROUP BY category")
+            cur.execute("SELECT category, SUM(amount) AS total FROM expense WHERE user_id=%s GROUP BY category", (session['user_id'],))
             category_data = cur.fetchall()
             pie_labels = [row['category'] for row in category_data]
             pie_values = [float(row['total']) for row in category_data]
 
-            # Bar chart (daily)
-            cur.execute("SELECT DATE_FORMAT(date, '%b %d') AS day, SUM(amount) AS total FROM expense GROUP BY DATE_FORMAT(date, '%b %d') ORDER BY DATE_FORMAT(date, '%b %d')")
+            cur.execute("""
+                SELECT DATE_FORMAT(date, '%b %d') AS day, SUM(amount) AS total
+                FROM expense
+                WHERE user_id=%s
+                GROUP BY DATE_FORMAT(date, '%b %d')
+                ORDER BY DATE_FORMAT(date, '%b %d')
+            """, (session['user_id'],))
             daily_data = cur.fetchall()
             daily_labels = [row['day'] for row in daily_data]
             daily_values = [float(row['total']) for row in daily_data]
 
-            # Line chart (savings trend)
             cur.execute("""
-                SELECT DATE_FORMAT(e.date, '%b') AS mon, 
+                SELECT DATE_FORMAT(e.date, '%b') AS mon,
                        COALESCE(SUM(i.amount), 0) - COALESCE(SUM(e.amount), 0) AS savings
                 FROM expense e
-                LEFT JOIN income i ON 1=1
+                LEFT JOIN income i ON i.user_id = e.user_id
+                WHERE e.user_id=%s
                 GROUP BY DATE_FORMAT(e.date, '%b')
                 ORDER BY DATE_FORMAT(e.date, '%b')
-            """)
+            """, (session['user_id'],))
             monthly_data = cur.fetchall()
             savings_labels = [row['mon'] for row in monthly_data]
             savings_values = [float(row['savings']) for row in monthly_data]
 
-        return render_template("dashboard.html",
+        return render_template(
+            "dashboard.html",
             total_income=total_income,
             total_expenses=total_expenses,
             net_savings=net_savings,
