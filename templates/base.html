@@ -8,6 +8,10 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap">
   <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.svg') }}">
+  <link rel="apple-touch-icon" href="{{ url_for('static', filename='favicon.svg') }}">
+
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
@@ -49,8 +53,8 @@
     {% if not hide_nav %}
     <nav class="bg-white shadow-sm border-b mb-6">
       <div class="container mx-auto px-4 py-3 flex flex-col sm:flex-row items-center justify-between">
-          <a href="{{ url_for('dashboard.index') }}" class="text-[#665191] font-bold text-lg flex items-center gap-2 mb-2 sm:mb-0">
-          <i class="fas fa-wallet text-[#665191] text-3xl"></i>
+          <a href="{{ url_for('dashboard.index') }}" class="text-[#e5d9ff] font-bold text-lg flex items-center gap-2 mb-2 sm:mb-0">
+          <i class="fas fa-wallet text-[#e5d9ff] text-3xl"></i>
           Track ME!
           </a>
           <div class="flex flex-wrap items-center gap-4 text-sm text-gray-600">
