@@ -2,42 +2,50 @@
 {% extends "base.html" %}
 {% block content %}
 
-<div class="min-h-[80vh] flex items-center justify-center">
-  <div class="w-full max-w-md bg-white rounded-xl shadow p-8 border border-gray-200">
+<div class="min-h-[80vh] flex items-center justify-center px-4">
+  <div class="w-full max-w-md bg-white dark:bg-[#111] rounded-xl shadow p-8 border border-gray-200 dark:border-gray-700 transition-colors">
 
-    <h2 class="text-2xl font-bold mb-6 text-center">Create Account</h2>
+    <h2 class="text-2xl font-bold mb-6 text-center text-gray-900 dark:text-gray-100">
+      Create Account
+    </h2>
 
     <form method="POST" class="space-y-5">
       <div>
-        <label class="block mb-1 text-sm font-medium">Name</label>
+        <label class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">Name</label>
         <input type="text" name="name"
-               class="w-full h-11 px-3 border border-gray-300 rounded-md focus:ring-purple-500 focus:border-purple-500"
+               class="w-full h-11 px-3 border border-gray-300 dark:border-gray-600 rounded-md
+                      bg-white dark:bg-[#1a1a1a] text-gray-900 dark:text-gray-200
+                      focus:ring-purple-500 focus:border-purple-500"
                required>
       </div>
 
       <div>
-        <label class="block mb-1 text-sm font-medium">Email</label>
+        <label class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">Email</label>
         <input type="email" name="email"
-               class="w-full h-11 px-3 border border-gray-300 rounded-md focus:ring-purple-500 focus:border-purple-500"
+               class="w-full h-11 px-3 border border-gray-300 dark:border-gray-600 rounded-md
+                      bg-white dark:bg-[#1a1a1a] text-gray-900 dark:text-gray-200
+                      focus:ring-purple-500 focus:border-purple-500"
                required>
       </div>
 
       <div>
-        <label class="block mb-1 text-sm font-medium">Password</label>
+        <label class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">Password</label>
         <input type="password" name="password"
-               class="w-full h-11 px-3 border border-gray-300 rounded-md focus:ring-purple-500 focus:border-purple-500"
+               class="w-full h-11 px-3 border border-gray-300 dark:border-gray-600 rounded-md
+                      bg-white dark:bg-[#1a1a1a] text-gray-900 dark:text-gray-200
+                      focus:ring-purple-500 focus:border-purple-500"
                required>
       </div>
 
       <button type="submit"
               class="w-full h-11 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-md text-sm font-semibold">
-        Sign up
+        Sign Up
       </button>
     </form>
 
-    <p class="mt-4 text-center text-sm text-gray-600">
+    <p class="mt-4 text-center text-sm text-gray-600 dark:text-gray-300">
       Already have an account?
-      <a href="{{ url_for('auth.login') }}" class="text-purple-600">Login</a>
+      <a href="{{ url_for('auth.login') }}" class="text-purple-600 dark:text-purple-400">Login</a>
     </p>
   </div>
 </div>
