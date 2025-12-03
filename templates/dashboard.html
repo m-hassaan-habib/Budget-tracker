@@ -130,15 +130,20 @@
 
 
 <script>
-  
-  new Chart(document.getElementById('whoChart'), {
+
+new Chart(document.getElementById('whoChart'), {
   type: 'bar',
   data: {
     labels: {{ who_labels|tojson }},
     datasets: [{
       label: 'Total',
       data: {{ who_values|tojson }},
-      backgroundColor: ['#1e90ff','#f3703f','#0f8238','#6466f1','#ff6361','#ffa600']
+      backgroundColor: [
+        '#003f5c',
+        '#7a5195',
+        '#ff7c43'
+      ],
+      borderRadius: 6
     }]
   },
   options: {
@@ -146,7 +151,13 @@
     maintainAspectRatio: false,
     plugins: { legend: { display: false } },
     scales: {
-      y: { beginAtZero: true }
+      y: {
+        beginAtZero: true,
+        ticks: { font: { size: 10 } }
+      },
+      x: {
+        ticks: { font: { size: 10 } }
+      }
     }
   }
 });
