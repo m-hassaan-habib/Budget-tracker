@@ -18,7 +18,7 @@ def index():
     try:
         with conn.cursor(dictionary=True) as cur:
             cur.execute(
-                "SELECT id, amount, category, note, date, attachment FROM expense WHERE user_id=%s ORDER BY date DESC",
+                "SELECT id, amount, category, note, date, attachment, done_by FROM expense WHERE user_id=%s ORDER BY date DESC",
                 (session['user_id'],)
             )
             expenses = [
@@ -29,6 +29,7 @@ def index():
                     "note": row['note'],
                     "date": row['date'],
                     "attachment": row['attachment'],
+                    "done_by": row['done_by'],
                 }
                 for row in cur.fetchall()
             ]
@@ -47,6 +48,7 @@ def add_expense():
     category = request.form['category']
     note = request.form.get('note')
     date_str = request.form['date']
+    done_by = request.form['done_by']
 
     file = request.files.get('attachment')
     filename = None
@@ -60,8 +62,8 @@ def add_expense():
     try:
         with conn.cursor() as cur:
             cur.execute(
-                "INSERT INTO expense (amount, category, note, date, user_id, attachment) VALUES (%s, %s, %s, %s, %s, %s)",
-                (amount, category, note, date_str, session['user_id'], filename)
+                "INSERT INTO expense (amount, category, note, date, user_id, attachment, done_by) VALUES (%s, %s, %s, %s, %s, %s, %s)",
+                (amount, category, note, date_str, session['user_id'], filename, done_by)
             )
             conn.commit()
         return redirect(url_for('expenses.index'))
@@ -76,6 +78,7 @@ def edit_expense(id):
     category = request.form['category']
     note = request.form.get('note')
     date_str = request.form['date']
+    done_by = request.form['done_by']
 
     file = request.files.get('attachment')
     new_filename = None
@@ -96,13 +99,13 @@ def edit_expense(id):
 
             if new_filename:
                 cur.execute(
-                    "UPDATE expense SET amount=%s, category=%s, note=%s, date=%s, attachment=%s WHERE id=%s AND user_id=%s",
-                    (amount, category, note, date_str, new_filename, id, session['user_id'])
+                    "UPDATE expense SET amount=%s, category=%s, note=%s, date=%s, attachment=%s done_by=%s WHERE id=%s AND user_id=%s",
+                    (amount, category, note, date_str, new_filename, done_by, id, session['user_id'])
                 )
             else:
                 cur.execute(
-                    "UPDATE expense SET amount=%s, category=%s, note=%s, date=%s WHERE id=%s AND user_id=%s",
-                    (amount, category, note, date_str, id, session['user_id'])
+                    "UPDATE expense SET amount=%s, category=%s, note=%s, date=%s done_by=%s WHERE id=%s AND user_id=%s",
+                    (amount, category, note, date_str, done_by, id, session['user_id'])
                 )
             conn.commit()
     finally:
@@ -131,7 +134,7 @@ def view_expense(id):
     try:
         with conn.cursor(dictionary=True) as cur:
             cur.execute(
-                "SELECT id, amount, category, note, date, attachment "
+                "SELECT id, amount, category, note, date, attachment, done_by "
                 "FROM expense WHERE id=%s AND user_id=%s",
                 (id, session['user_id'])
             )

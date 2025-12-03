@@ -51,6 +51,17 @@ def index():
             savings_labels = [row['mon'] for row in monthly_data]
             savings_values = [float(row['savings']) for row in monthly_data]
 
+            cur.execute("""
+                SELECT done_by, SUM(amount) AS total
+                FROM expense
+                WHERE user_id=%s
+                GROUP BY done_by
+            """, (session['user_id'],))
+
+            who_data = cur.fetchall()
+            who_labels = [row['done_by'] for row in who_data]
+            who_values = [float(row['total']) for row in who_data]
+
         return render_template(
             "dashboard.html",
             total_income=total_income,
@@ -63,7 +74,10 @@ def index():
             savings_labels=savings_labels,
             savings_values=savings_values,
             total_savings=total_savings,
-            monthly_limit=monthly_limit
+            monthly_limit=monthly_limit,
+            who_labels=who_labels,
+            who_values=who_values
+
         )
     finally:
         conn.close()

@@ -121,7 +121,37 @@
   </div>
 </section>
 
+<section class="bg-white mt-6 rounded-lg p-6 shadow-sm">
+  <h2 class="text-[#0f8238] font-extrabold text-lg mb-4">Expense Breakdown by Person</h2>
+  <div class="h-[280px] w-full">
+    <canvas id="whoChart"></canvas>
+  </div>
+</section>
+
+
 <script>
+  
+  new Chart(document.getElementById('whoChart'), {
+  type: 'bar',
+  data: {
+    labels: {{ who_labels|tojson }},
+    datasets: [{
+      label: 'Total',
+      data: {{ who_values|tojson }},
+      backgroundColor: ['#1e90ff','#f3703f','#0f8238','#6466f1','#ff6361','#ffa600']
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      y: { beginAtZero: true }
+    }
+  }
+});
+
+
   new Chart(document.getElementById('categoryChart'), {
   type: 'pie',
   data: {

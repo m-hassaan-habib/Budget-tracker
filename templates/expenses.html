@@ -50,6 +50,13 @@
         <p>{{ expense.note }}</p>
       </div>
       {% endif %}
+
+      {% if expense.done_by %}
+      <div class="flex items-center text-gray-500 text-xs ml-4">
+        <i class="fas fa-user mr-1"></i> {{ expense.done_by }}
+      </div>
+      {% endif %}
+
     </div>
 
     <div class="flex flex-col justify-center items-center gap-3 text-sm">
@@ -74,7 +81,7 @@
 
 
 <div id="addExpenseModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 hidden">
-  <div class="bg-white rounded-lg border border-gray-200 shadow-xl w-full max-w-md p-6 mx-4">
+  <div class="bg-white rounded-lg border border-gray-200 shadow-xl w-full max-w-md p-6 mx-4 relative">
     <button onclick="closeModal('addExpenseModal')" class="absolute top-3 right-3 text-gray-400 hover:text-gray-600 text-xl">&times;</button>
     <h2 class="text-lg font-semibold mb-4">Add Expense</h2>
     <form method="POST" action="{{ url_for('expenses.add_expense') }}" enctype="multipart/form-data" class="space-y-4">
@@ -160,6 +167,15 @@
         <input type="file" name="attachment" class="w-full text-sm border border-gray-300 rounded-md p-1">
         <p class="text-[11px] text-gray-500 mt-1">Accepted: PDF, PNG, JPG</p>
       </div>
+      <div>
+      <label class="block text-sm font-medium mb-1">Expense Done By</label>
+      <select name="done_by" class="w-full border border-gray-300 rounded-md shadow-sm py-2 px-3" required>
+        <option value="" disabled selected>Select Person</option>
+        <option value="Faisal">Faisal</option>
+        <option value="Hassan">Hassan</option>
+        <option value="Faran">Faran</option>
+      </select>
+    </div>
       <div class="text-right">
         <button type="submit" class="bg-[#0f8238] text-white px-4 py-2 rounded shadow hover:bg-green-700">Add Expense</button>
       </div>
@@ -169,7 +185,7 @@
 
 {% for expense in expenses %}
 <div id="editExpenseModal{{ expense.id }}" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 hidden">
-  <div class="bg-white rounded-lg border border-gray-200 shadow-xl w-full max-w-md p-6 mx-4">
+  <div class="bg-white rounded-lg border border-gray-200 shadow-xl w-full max-w-md p-6 mx-4 relative">
     <button onclick="closeModal('editExpenseModal{{ expense.id }}')" class="absolute top-3 right-3 text-gray-400 hover:text-gray-600 text-xl">&times;</button>
     <h2 class="text-lg font-semibold mb-4">Edit Expense</h2>
     <form method="POST" action="{{ url_for('expenses.edit_expense', id=expense.id) }}" class="space-y-4">
@@ -260,6 +276,15 @@
           class="text-xs text-purple-600 underline block mt-1">View Current</a>
         {% endif %}
       </div>
+      <div>
+      <label class="block text-sm font-medium mb-1">Expense Done By</label>
+      <select name="done_by" class="select2 w-full border border-gray-300 rounded-md shadow-sm py-2 px-3" required>
+        <option value="Faisal" {% if expense.done_by == "Faisal" %}selected{% endif %}>Faisal</option>
+        <option value="Hassan" {% if expense.done_by == "Hassan" %}selected{% endif %}>Hassan</option>
+        <option value="Faran" {% if expense.done_by == "Faran" %}selected{% endif %}>Faran</option>
+      </select>
+    </div>
+
       <div class="text-right">
         <button type="submit" class="bg-[#0f8238] text-white px-4 py-2 rounded shadow hover:bg-green-700">Update</button>
       </div>

@@ -35,6 +35,12 @@
       {{ expense.date.strftime('%B %d, %Y') }}
     </p>
 
+    <p class="text-sm text-gray-600 flex items-center gap-2">
+      <i class="fas fa-user text-gray-400"></i>
+      Expense Done By: <span class="font-medium text-gray-700">{{ expense.done_by }}</span>
+    </p>
+
+
     {% if expense.note %}
     <p class="text-sm text-gray-700">{{ expense.note }}</p>
     {% endif %}

@@ -63,3 +63,5 @@ ALTER TABLE archived_income ADD COLUMN user_id INT NOT NULL;
 ALTER TABLE archived_expense ADD COLUMN user_id INT NOT NULL;
 
 ALTER TABLE expense ADD COLUMN attachment VARCHAR(255) NULL;
+
+ALTER TABLE expense ADD COLUMN done_by VARCHAR(50) NOT NULL DEFAULT 'Self';

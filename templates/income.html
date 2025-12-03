@@ -41,7 +41,7 @@
 
 <!-- Add Income Modal -->
 <div id="addIncomeModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 hidden">
-  <div class="bg-white border border-gray-200 rounded-lg shadow-xl w-full max-w-md p-6 mx-4">
+  <div class="bg-white border border-gray-200 rounded-lg shadow-xl w-full max-w-md p-6 mx-4 relative">
     <button onclick="closeModal('addIncomeModal')" class="absolute top-3 right-3 text-gray-400 hover:text-gray-600 text-xl">&times;</button>
     <h2 class="text-lg font-semibold mb-4">Add Income</h2>
     <form method="POST" action="{{ url_for('income.add_income') }}" class="space-y-4">
@@ -63,7 +63,7 @@
 <!-- Edit Income Modals -->
 {% for income in incomes %}
 <div id="editModal{{ income.id }}" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 hidden">
-  <div class="bg-white border border-gray-200 rounded-lg shadow-xl w-full max-w-md p-6 mx-4">
+  <div class="bg-white border border-gray-200 rounded-lg shadow-xl w-full max-w-md p-6 mx-4 relative">
     <button onclick="closeModal('editModal{{ income.id }}')" class="absolute top-3 right-3 text-gray-400 hover:text-gray-600 text-xl">&times;</button>
     <h2 class="text-lg font-semibold mb-4">Edit Income</h2>
     <form method="POST" action="{{ url_for('income.edit_income', id=income.id) }}" class="space-y-4">
