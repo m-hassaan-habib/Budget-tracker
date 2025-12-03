@@ -2,27 +2,38 @@
 {% block content %}
 
 <div class="w-full max-w-full mx-auto">
-  <h2 class="text-xl font-bold mb-4">Archived History</h2>
 
+  <h2 class="text-xl font-bold mb-4 text-[#0f8238] dark:text-[#5bd68d]">Archived History</h2>
+
+  <!-- Month Selector -->
   <form method="GET" class="mb-6">
-    <label for="month" class="block text-sm font-medium text-gray-700 mb-1">Select Month:</label>
+    <label for="month" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Select Month:</label>
+
     <select
       name="month"
       onchange="this.form.submit()"
-      class="w-full sm:w-48 h-10 border border-gray-300 rounded-md shadow-sm px-3 focus:ring-blue-600 focus:border-blue-600">
+      class="w-full sm:w-48 h-10 border border-gray-300 dark:border-gray-700 dark:bg-[#1a1a1a]
+             dark:text-gray-200 rounded-md shadow-sm px-3
+             focus:ring-[#0f8238] focus:border-[#0f8238] transition">
       {% for m in months %}
       <option value="{{ m }}" {% if m == selected_month %}selected{% endif %}>{{ m }}</option>
       {% endfor %}
     </select>
   </form>
 
+  <!-- Two-column grid -->
   <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-    <div class="bg-white border border-gray-200 rounded-lg shadow-sm p-4">
-      <h3 class="text-lg font-semibold mb-4">Income</h3>
+
+    <!-- Income Panel -->
+    <div class="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700
+                rounded-lg shadow-sm p-4 transition">
+      <h3 class="text-lg font-semibold mb-4 text-[#1e90ff] dark:text-[#70b7ff]">Income</h3>
+
       {% if incomes %}
       <div class="overflow-x-auto">
-        <table class="w-full text-sm text-left text-gray-700 border border-gray-100">
-          <thead class="bg-gray-100 text-gray-600">
+        <table class="w-full text-sm text-left text-gray-700 dark:text-gray-200
+                      border dark:border-gray-700">
+          <thead class="bg-gray-100 dark:bg-[#222] text-gray-600 dark:text-gray-300">
             <tr>
               <th class="px-4 py-2">Source</th>
               <th class="px-4 py-2">Amount</th>
@@ -30,7 +41,7 @@
           </thead>
           <tbody>
             {% for inc in incomes %}
-            <tr class="border-t">
+            <tr class="border-t border-gray-200 dark:border-gray-700">
               <td class="px-4 py-2">{{ inc.source }}</td>
               <td class="px-4 py-2">Rs. {{ inc.amount }}</td>
             </tr>
@@ -39,20 +50,25 @@
         </table>
       </div>
       {% else %}
-      <p class="text-sm text-gray-400 text-center py-4">No income</p>
+      <p class="text-sm text-gray-400 dark:text-gray-500 text-center py-4">No income</p>
       {% endif %}
     </div>
 
-    <div class="bg-white border border-gray-200 rounded-lg shadow-sm p-4">
-      <h3 class="text-lg font-semibold mb-4">Expenses</h3>
+    <!-- Expenses Panel -->
+    <div class="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700
+                rounded-lg shadow-sm p-4 transition">
+      <h3 class="text-lg font-semibold mb-4 text-[#f3703f] dark:text-[#ff9966]">Expenses</h3>
 
       {% if expenses %}
 
+      <!-- Scroll section -->
       <div class="max-h-[400px] overflow-y-auto pr-1">
 
+        <!-- Desktop Table -->
         <div class="hidden md:block overflow-x-auto">
-          <table class="w-full text-sm text-left text-gray-700 border border-gray-100">
-            <thead class="bg-gray-100 text-gray-600">
+          <table class="w-full text-sm text-left text-gray-700 dark:text-gray-200
+                        border dark:border-gray-700">
+            <thead class="bg-gray-100 dark:bg-[#222] text-gray-600 dark:text-gray-300">
               <tr>
                 <th class="px-4 py-2">Amount</th>
                 <th class="px-4 py-2">Category</th>
@@ -62,7 +78,7 @@
             </thead>
             <tbody>
               {% for exp in expenses %}
-              <tr class="border-t">
+              <tr class="border-t border-gray-200 dark:border-gray-700">
                 <td class="px-4 py-2">Rs. {{ exp.amount }}</td>
                 <td class="px-4 py-2">{{ exp.category }}</td>
                 <td class="px-4 py-2">{{ exp.note or "" }}</td>
@@ -73,9 +89,11 @@
           </table>
         </div>
 
+        <!-- Mobile Table -->
         <div class="block md:hidden space-y-4">
-          <table class="w-full text-xs text-left text-gray-700 border border-gray-100">
-            <thead class="bg-gray-100 text-gray-600">
+          <table class="w-full text-xs text-left text-gray-700 dark:text-gray-200
+                        border dark:border-gray-700">
+            <thead class="bg-gray-100 dark:bg-[#222] text-gray-600 dark:text-gray-300">
               <tr>
                 <th class="px-4 py-2">Amount</th>
                 <th class="px-4 py-2">Category</th>
@@ -85,7 +103,7 @@
             </thead>
             <tbody>
               {% for exp in expenses %}
-              <tr class="border-t">
+              <tr class="border-t border-gray-200 dark:border-gray-700">
                 <td class="px-4 py-2">Rs. {{ exp.amount }}</td>
                 <td class="px-4 py-2">{{ exp.category }}</td>
                 <td class="px-4 py-2">{{ exp.note or "" }}</td>
@@ -99,10 +117,9 @@
       </div>
 
       {% else %}
-      <p class="text-sm text-gray-400 text-center py-4">No expenses</p>
+      <p class="text-sm text-gray-400 dark:text-gray-500 text-center py-4">No expenses</p>
       {% endif %}
     </div>
-
 
   </div>
 </div>

@@ -1,16 +1,20 @@
 {% extends "base.html" %}
 
 <style>
-.select2-results__option .opt{display:flex;align-items:center;gap:8px}
-.select2-results__option .ico{width:22px;min-width:22px;text-align:center;font-size:16px;line-height:1}
-.select2-container--default .select2-selection__rendered .opt{display:flex;align-items:center;gap:8px}
-.select2-container--default .select2-selection__rendered .ico{width:18px;min-width:18px;text-align:center;font-size:14px;line-height:1}
+.select2-results__option .opt { display:flex; align-items:center; gap:8px }
+.select2-results__option .ico { width:22px; min-width:22px; text-align:center; font-size:16px; line-height:1 }
+.select2-container--default .select2-selection__rendered .opt { display:flex; align-items:center; gap:8px }
+.select2-container--default .select2-selection--single .select2-selection__rendered .ico {
+  width:18px; min-width:18px; text-align:center; font-size:14px; line-height:1;
+}
 </style>
 
 {% block content %}
 
+<!-- HEADER -->
 <div class="flex flex-col sm:flex-row justify-between items-center mb-6">
-  <h2 class="text-xl font-bold mb-2 sm:mb-0">All Expenses</h2>
+  <h2 class="text-xl font-bold mb-2 sm:mb-0 text-gray-900 dark:text-gray-200">All Expenses</h2>
+
   <button
     class="bg-[#0f8238] hover:bg-green-700 text-white text-sm px-4 py-2 rounded shadow-md"
     data-bs-toggle="modal"
@@ -19,49 +23,56 @@
   </button>
 </div>
 
+<!-- EXPENSE LIST -->
 <section class="space-y-2">
   {% for expense in expenses %}
   <article
     onclick="window.location='{{ url_for('expenses.view_expense', id=expense.id) }}'"
-    class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm flex items-start justify-between gap-4 cursor-pointer hover:shadow-md transition"
+    class="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-800 rounded-lg
+           p-5 shadow-sm flex items-start justify-between gap-4 cursor-pointer
+           hover:shadow-lg hover:border-gray-300 dark:hover:border-gray-600 transition"
   >
     <div class="flex-1">
       <div class="flex flex-wrap items-center gap-2 mb-2">
-        <p class="font-bold text-lg text-gray-900">Rs. {{ expense.amount }}</p>
 
-        <div class="flex items-center text-gray-500 text-xs">
+        <p class="font-bold text-lg text-gray-900 dark:text-gray-100">
+          Rs. {{ expense.amount }}
+        </p>
+
+        <div class="flex items-center text-gray-500 dark:text-gray-400 text-xs">
           <i class="fas fa-tag mr-1"></i>{{ expense.category }}
         </div>
 
-        <div class="flex items-center text-gray-500 text-xs">
+        <div class="flex items-center text-gray-500 dark:text-gray-400 text-xs">
           <i class="fas fa-calendar-alt ml-4 mr-1"></i>{{ expense.date.strftime('%b %d, %Y') }}
         </div>
 
         {% if expense.attachment %}
-        <div class="flex items-center text-gray-500 text-xs ml-4">
+        <div class="flex items-center text-gray-500 dark:text-gray-400 text-xs ml-4">
           <i class="fas fa-paperclip mr-1"></i> Attachment
         </div>
         {% endif %}
       </div>
 
       {% if expense.note %}
-      <div class="flex items-center gap-2 text-gray-600 text-sm">
+      <div class="flex items-center gap-2 text-gray-600 dark:text-gray-300 text-sm">
         <i class="far fa-file-alt"></i>
         <p>{{ expense.note }}</p>
       </div>
       {% endif %}
 
       {% if expense.done_by %}
-      <div class="flex items-center text-gray-500 text-xs ml-4">
+      <div class="flex items-center text-gray-500 dark:text-gray-400 text-xs ml-4">
         <i class="fas fa-user mr-1"></i> {{ expense.done_by }}
       </div>
       {% endif %}
-
     </div>
 
+    <!-- ACTIONS -->
     <div class="flex flex-col justify-center items-center gap-3 text-sm">
+
       <button
-        class="text-indigo-500 hover:text-blue-400"
+        class="text-indigo-500 dark:text-indigo-400 hover:text-blue-400 dark:hover:text-blue-300"
         onclick="event.stopPropagation();"
         data-bs-toggle="modal"
         data-bs-target="#editExpenseModal{{ expense.id }}">
@@ -70,30 +81,43 @@
 
       <a href="{{ url_for('expenses.delete_expense', id=expense.id) }}"
         onclick="event.stopPropagation();"
-        class="text-amber-500 hover:text-red-400">
+        class="text-amber-500 dark:text-amber-400 hover:text-red-400 dark:hover:text-red-300">
         <i class="fas fa-trash-alt"></i>
       </a>
+
     </div>
   </article>
-
   {% endfor %}
 </section>
 
+<!-- ADD MODAL -->
+<div id="addExpenseModal"
+     class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 hidden">
 
-<div id="addExpenseModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 hidden">
-  <div class="bg-white rounded-lg border border-gray-200 shadow-xl w-full max-w-md p-6 mx-4 relative">
-    <button onclick="closeModal('addExpenseModal')" class="absolute top-3 right-3 text-gray-400 hover:text-gray-600 text-xl">&times;</button>
-    <h2 class="text-lg font-semibold mb-4">Add Expense</h2>
-    <form method="POST" action="{{ url_for('expenses.add_expense') }}" enctype="multipart/form-data" class="space-y-4">
+  <div class="bg-white dark:bg-[#1a1a1a] rounded-lg border border-gray-200 dark:border-gray-700
+              shadow-xl w-full max-w-md p-6 mx-4 relative">
+
+    <button onclick="closeModal('addExpenseModal')"
+            class="absolute top-3 right-3 text-gray-400 dark:text-gray-500 hover:text-gray-300 text-xl">
+      &times;
+    </button>
+
+    <h2 class="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">Add Expense</h2>
+
+    <form method="POST" action="{{ url_for('expenses.add_expense') }}"
+          enctype="multipart/form-data" class="space-y-4">
+
       <div>
-        <label class="block text-sm font-medium mb-1">Amount</label>
-        <input type="number" name="amount" step="0.01" required class="w-full border border-gray-300 rounded-md shadow-sm focus:ring-[#0f8238] focus:border-[#0f8238] py-2 px-2">
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Amount</label>
+        <input type="number" name="amount" step="0.01" required
+          class="w-full border border-gray-300 dark:border-gray-600 dark:bg-[#111] dark:text-gray-200
+                 rounded-md shadow-sm focus:ring-[#0f8238] focus:border-[#0f8238] py-2 px-2">
       </div>
-      <div>
-        <label class="block text-sm font-medium mb-1">Category</label>
-        <select name="category" class="select2 w-full border border-gray-300 rounded-md shadow-sm py-2 px-3" required>
-          <option disabled selected value="">Select Category</option>
 
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Category</label>
+        <select name="category" class="select2 w-full border border-gray-300 dark:border-gray-600 dark:bg-[#111] dark:text-gray-200 rounded-md shadow-sm py-2 px-3" required>
+          <option disabled selected value="">Select Category</option>
           <option data-icon="fas fa-gem" data-color="#8b5cf6" value="Acessories">Accessories</option>
           <option data-icon="fas fa-baby-carriage" data-color="#fbbf24" value="Baby Food">Baby Food</option>
           <option data-icon="fas fa-file-invoice-dollar" data-color="#ef4444" value="Bills">Bills</option>
@@ -154,49 +178,84 @@
           <option data-icon="fas fa-ellipsis-h" data-color="#9ca3af" value="Miscellaneous">Miscellaneous</option>
         </select>
       </div>
+
       <div>
-        <label class="block text-sm font-medium mb-1">Note (optional)</label>
-        <textarea name="note" rows="2" class="w-full border border-gray-300 rounded-md shadow-sm focus:ring-[#0f8238] focus:border-[#0f8238] px-2 py-1"></textarea>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Note (optional)</label>
+        <textarea name="note" rows="2"
+            class="w-full border border-gray-300 dark:border-gray-600 dark:bg-[#111] dark:text-gray-200
+                   rounded-md shadow-sm focus:ring-[#0f8238] focus:border-[#0f8238] px-2 py-1">
+        </textarea>
       </div>
+
       <div>
-        <label class="block text-sm font-medium mb-1">Date</label>
-        <input type="date" name="date" value="{{ current_date }}" required class="w-full border border-gray-300 rounded-md shadow-sm focus:ring-[#0f8238] focus:border-[#0f8238] py-2 px-2">
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date</label>
+        <input type="date" name="date" value="{{ current_date }}" required
+          class="w-full border border-gray-300 dark:border-gray-600 dark:bg-[#111] dark:text-gray-200
+                 rounded-md shadow-sm focus:ring-[#0f8238] focus:border-[#0f8238] py-2 px-2">
       </div>
+
       <div>
-        <label class="block text-sm font-medium mb-1">Receipt (optional)</label>
-        <input type="file" name="attachment" class="w-full text-sm border border-gray-300 rounded-md p-1">
-        <p class="text-[11px] text-gray-500 mt-1">Accepted: PDF, PNG, JPG</p>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Receipt (optional)</label>
+        <input type="file"
+               class="w-full text-sm border border-gray-300 dark:border-gray-600 dark:bg-[#111]
+                      dark:text-gray-200 rounded-md p-1" name="attachment">
+        <p class="text-[11px] text-gray-500 dark:text-gray-400 mt-1">Accepted: PDF, PNG, JPG</p>
       </div>
+
       <div>
-      <label class="block text-sm font-medium mb-1">Expense Done By</label>
-      <select name="done_by" class="w-full border border-gray-300 rounded-md shadow-sm py-2 px-3" required>
-        <option value="" disabled selected>Select Person</option>
-        <option value="Faisal">Faisal</option>
-        <option value="Hassan">Hassan</option>
-        <option value="Faran">Faran</option>
-      </select>
-    </div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Expense Done By</label>
+        <select name="done_by"
+          class="w-full border border-gray-300 dark:border-gray-600 dark:bg-[#111] dark:text-gray-200
+                 rounded-md shadow-sm py-2 px-3"
+          required>
+          <option value="" disabled selected>Select Person</option>
+          <option value="Faisal">Faisal</option>
+          <option value="Hassan">Hassan</option>
+          <option value="Faran">Faran</option>
+        </select>
+      </div>
+
       <div class="text-right">
-        <button type="submit" class="bg-[#0f8238] text-white px-4 py-2 rounded shadow hover:bg-green-700">Add Expense</button>
+        <button type="submit"
+                class="bg-[#0f8238] text-white px-4 py-2 rounded shadow hover:bg-green-700">
+          Add Expense
+        </button>
       </div>
+
     </form>
   </div>
 </div>
 
+<!-- EDIT MODALS -->
 {% for expense in expenses %}
-<div id="editExpenseModal{{ expense.id }}" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 hidden">
-  <div class="bg-white rounded-lg border border-gray-200 shadow-xl w-full max-w-md p-6 mx-4 relative">
-    <button onclick="closeModal('editExpenseModal{{ expense.id }}')" class="absolute top-3 right-3 text-gray-400 hover:text-gray-600 text-xl">&times;</button>
-    <h2 class="text-lg font-semibold mb-4">Edit Expense</h2>
-    <form method="POST" action="{{ url_for('expenses.edit_expense', id=expense.id) }}" class="space-y-4">
-      <input type="hidden" name="id" value="{{ expense.id }} ">
+<div id="editExpenseModal{{ expense.id }}"
+     class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 hidden">
+
+  <div class="bg-white dark:bg-[#1a1a1a] rounded-lg border border-gray-200 dark:border-gray-700
+              shadow-xl w-full max-w-md p-6 mx-4 relative">
+
+    <button onclick="closeModal('editExpenseModal{{ expense.id }}')"
+            class="absolute top-3 right-3 text-gray-400 dark:text-gray-500 hover:text-gray-300 text-xl">
+      &times;
+    </button>
+
+    <h2 class="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">Edit Expense</h2>
+
+    <form method="POST" action="{{ url_for('expenses.edit_expense', id=expense.id) }}"
+          class="space-y-4">
+
+      <input type="hidden" name="id" value="{{ expense.id }}">
+
       <div>
-        <label class="block text-sm font-medium mb-1">Amount</label>
-        <input type="number" step="0.01" name="amount" value="{{ expense.amount }}" required class="w-full border border-gray-300 rounded-md shadow-sm py-2 px-2">
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Amount</label>
+        <input type="number" step="0.01" name="amount" value="{{ expense.amount }}" required
+          class="w-full border border-gray-300 dark:border-gray-600 dark:bg-[#111] dark:text-gray-200
+                 rounded-md shadow-sm px-2 py-2">
       </div>
+
       <div>
-        <label class="block text-sm font-medium mb-1">Category</label>
-        <select name="category" class="select2 w-full border border-gray-300 rounded-md shadow-sm py-2 px-3" required>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Category</label>
+        <select name="category" class="select2 w-full border border-gray-300 dark:border-gray-600 dark:bg-[#111] dark:text-gray-200 rounded-md shadow-sm py-2 px-3" required>
           <option disabled value="">Select Category</option>
 
           <option data-icon="fas fa-gem" data-color="#8b5cf6" value="Acessories" {% if expense.category == "Acessories" %}selected{% endif %}>Accessories</option>
@@ -259,35 +318,50 @@
           <option data-icon="fas fa-ellipsis-h" data-color="#9ca3af" value="Miscellaneous" {% if expense.category == "Miscellaneous" %}selected{% endif %}>Miscellaneous</option>
         </select>
       </div>
+
       <div>
-        <label class="block text-sm font-medium mb-1">Note</label>
-        <textarea name="note" rows="2" class="w-full border border-gray-300 rounded-md shadow-sm py-1 px-2">{{ expense.note }}</textarea>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Note</label>
+        <textarea name="note" rows="2"
+          class="w-full border border-gray-300 dark:border-gray-600 dark:bg-[#111] dark:text-gray-200
+                 rounded-md shadow-sm py-1 px-2">{{ expense.note }}</textarea>
       </div>
+
       <div>
-        <label class="block text-sm font-medium mb-1">Date</label>
-        <input type="date" name="date" value="{{ expense.date }}" class="w-full border border-gray-300 rounded-md shadow-sm py-2 px-2">
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date</label>
+        <input type="date" name="date" value="{{ expense.date }}"
+          class="w-full border border-gray-300 dark:border-gray-600 dark:bg-[#111] dark:text-gray-200
+                 rounded-md shadow-sm px-2 py-2">
       </div>
+
       <div>
-        <label class="block text-sm font-medium mb-1">Receipt (optional)</label>
-        <input type="file" name="attachment" class="w-full text-sm border border-gray-300 rounded-md p-1">
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Receipt</label>
+        <input type="file"
+          class="w-full text-sm border border-gray-300 dark:border-gray-600 dark:bg-[#111]
+                 dark:text-gray-200 rounded-md p-1" name="attachment">
         {% if expense.attachment %}
         <a href="{{ url_for('receipt_file', filename=expense.attachment) }}"
           target="_blank"
-          class="text-xs text-purple-600 underline block mt-1">View Current</a>
+          class="text-xs text-purple-600 dark:text-purple-400 underline block mt-1">View Current</a>
         {% endif %}
       </div>
+
       <div>
-      <label class="block text-sm font-medium mb-1">Expense Done By</label>
-      <select name="done_by" class="select2 w-full border border-gray-300 rounded-md shadow-sm py-2 px-3" required>
-        <option value="Faisal" {% if expense.done_by == "Faisal" %}selected{% endif %}>Faisal</option>
-        <option value="Hassan" {% if expense.done_by == "Hassan" %}selected{% endif %}>Hassan</option>
-        <option value="Faran" {% if expense.done_by == "Faran" %}selected{% endif %}>Faran</option>
-      </select>
-    </div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Expense Done By</label>
+        <select name="done_by"
+          class="select2 w-full border border-gray-300 dark:border-gray-600 dark:bg-[#111] dark:text-gray-200
+                 rounded-md shadow-sm py-2 px-3" required>
+          <option value="Faisal" {% if expense.done_by == "Faisal" %}selected{% endif %}>Faisal</option>
+          <option value="Hassan" {% if expense.done_by == "Hassan" %}selected{% endif %}>Hassan</option>
+          <option value="Faran" {% if expense.done_by == "Faran" %}selected{% endif %}>Faran</option>
+        </select>
+      </div>
 
       <div class="text-right">
-        <button type="submit" class="bg-[#0f8238] text-white px-4 py-2 rounded shadow hover:bg-green-700">Update</button>
+        <button type="submit" class="bg-[#0f8238] text-white px-4 py-2 rounded shadow hover:bg-green-700">
+          Update
+        </button>
       </div>
+
     </form>
   </div>
 </div>
@@ -324,7 +398,7 @@
       dropdownParent: $('#addExpenseModal'),
       templateResult: formatOption,
       templateSelection: formatOption,
-      escapeMarkup: function(m) { return m; }
+      escapeMarkup: m=>m
     });
 
     {% for expense in expenses %}
@@ -333,7 +407,7 @@
       dropdownParent: $('#editExpenseModal{{ expense.id }}'),
       templateResult: formatOption,
       templateSelection: formatOption,
-      escapeMarkup: function(m) { return m; }
+      escapeMarkup: m=>m
     });
     {% endfor %}
   });
