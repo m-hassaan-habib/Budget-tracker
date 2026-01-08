@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="max-w-2xl mx-auto bg-white dark:bg-[#1a1a1a]
+            border border-gray-200 dark:border-gray-700
+            rounded-lg p-6 shadow-sm">
+
+  <h2 class="text-xl font-bold mb-4 text-gray-900 dark:text-gray-100">
+    Archived Expense
+  </h2>
+
+  <div class="space-y-3 text-sm">
+
+    <p class="text-lg font-semibold text-[#f3703f] dark:text-[#ff9966]">
+      Rs. {{ expense.amount }}
+    </p>
+
+    <p class="flex items-center gap-2 text-gray-600 dark:text-gray-300">
+      <i class="fas fa-tag"></i> {{ expense.category }}
+    </p>
+
+    <p class="flex items-center gap-2 text-gray-600 dark:text-gray-300">
+      <i class="fas fa-calendar-alt"></i>
+      {{ expense.date }}
+    </p>
+
+    {% if expense.note %}
+    <p class="text-gray-700 dark:text-gray-300">
+      {{ expense.note }}
+    </p>
+    {% endif %}
+
+    <div class="mt-6 text-xs text-gray-400 dark:text-gray-500">
+      This expense is archived and cannot be edited.
+    </div>
+
+  </div>
+</div>
+
+{% endblock %}

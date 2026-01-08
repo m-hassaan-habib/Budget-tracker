@@ -9,20 +9,36 @@ def index():
     conn = current_app.db_pool.get_connection()
     try:
         with conn.cursor(dictionary=True) as cur:
-            cur.execute("SELECT COALESCE(SUM(amount), 0) AS total FROM income WHERE user_id=%s", (session['user_id'],))
+            cur.execute(
+                "SELECT COALESCE(SUM(amount), 0) AS total FROM income WHERE user_id=%s",
+                (session['user_id'],)
+            )
             total_income = float(cur.fetchone()['total'])
 
-            cur.execute("SELECT COALESCE(SUM(amount), 0) AS total FROM expense WHERE user_id=%s", (session['user_id'],))
+            cur.execute(
+                "SELECT COALESCE(SUM(amount), 0) AS total FROM expense WHERE user_id=%s",
+                (session['user_id'],)
+            )
             total_expenses = float(cur.fetchone()['total'])
 
             net_savings = total_income - total_expenses
 
-            cur.execute("SELECT monthly_limit, total_savings FROM setting WHERE user_id=%s LIMIT 1", (session['user_id'],))
+            cur.execute(
+                "SELECT monthly_limit, total_savings FROM setting WHERE user_id=%s LIMIT 1",
+                (session['user_id'],)
+            )
             setting = cur.fetchone()
             monthly_limit = float(setting['monthly_limit']) if setting else 0
             total_savings = float(setting['total_savings']) if setting else 0
 
-            cur.execute("SELECT category, SUM(amount) AS total FROM expense WHERE user_id=%s GROUP BY category", (session['user_id'],))
+            grand_total = net_savings + total_savings
+
+            cur.execute("""
+                SELECT category, SUM(amount) AS total
+                FROM expense
+                WHERE user_id=%s
+                GROUP BY category
+            """, (session['user_id'],))
             category_data = cur.fetchall()
             pie_labels = [row['category'] for row in category_data]
             pie_values = [float(row['total']) for row in category_data]
@@ -57,7 +73,6 @@ def index():
                 WHERE user_id=%s
                 GROUP BY done_by
             """, (session['user_id'],))
-
             who_data = cur.fetchall()
             who_labels = [row['done_by'] for row in who_data]
             who_values = [float(row['total']) for row in who_data]
@@ -67,17 +82,17 @@ def index():
             total_income=total_income,
             total_expenses=total_expenses,
             net_savings=net_savings,
+            total_savings=total_savings,
+            grand_total=grand_total,
+            monthly_limit=monthly_limit,
             pie_labels=pie_labels,
             pie_values=pie_values,
             daily_labels=daily_labels,
             daily_values=daily_values,
             savings_labels=savings_labels,
             savings_values=savings_values,
-            total_savings=total_savings,
-            monthly_limit=monthly_limit,
             who_labels=who_labels,
             who_values=who_values
-
         )
     finally:
         conn.close()

@@ -41,6 +41,17 @@
       color: #111827;
       transition: background-color 0.3s ease, color 0.3s ease;
     }
+    .dark-select {
+      appearance: none;
+      background-image:
+        linear-gradient(45deg, transparent 50%, #9ca3af 50%),
+        linear-gradient(135deg, #9ca3af 50%, transparent 50%);
+      background-position:
+        calc(100% - 18px) calc(50% - 4px),
+        calc(100% - 12px) calc(50% - 4px);
+      background-size: 6px 6px, 6px 6px;
+      background-repeat: no-repeat;
+    }
 
     html.dark body {
       background-color: #0d0d0d;
@@ -107,6 +118,7 @@
       <a href="{{ url_for('expenses.index') }}" class="hover:text-[#0f8238]">Expenses</a>
       <a href="{{ url_for('income.index') }}" class="hover:text-[#0f8238]">Income</a>
       <a href="{{ url_for('history.index') }}" class="hover:text-[#0f8238]">History</a>
+      <a href="{{ url_for('history.compare') }}">Compare</a>
       <a href="{{ url_for('settings.index') }}" class="hover:text-[#0f8238]">Settings</a>
       <a href="{{ url_for('auth.logout') }}" class="hover:text-red-600">Logout</a>
 

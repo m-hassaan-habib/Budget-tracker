@@ -1,0 +1,211 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h2 class="text-xl font-bold mb-6 text-[#0f8238] dark:text-[#5bd68d]">
+  Compare Months
+</h2>
+
+<form method="GET" class="grid grid-cols-1 sm:grid-cols-12 gap-4 mb-10">
+
+  <!-- Month A -->
+  <div class="sm:col-span-5">
+    <label class="block text-xs text-gray-400 mb-1">From</label>
+    <select name="m1"
+      class="w-full h-12
+             bg-[#111] text-white
+             border border-gray-700 rounded-lg
+             px-4
+             focus:outline-none focus:ring-2 focus:ring-[#0f8238]
+             transition">
+      {% for m in months %}
+        <option value="{{ m }}" {% if m == m1 %}selected{% endif %}>
+          {{ m }}
+        </option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <!-- Month B -->
+  <div class="sm:col-span-5">
+    <label class="block text-xs text-gray-400 mb-1">To</label>
+    <select name="m2"
+      class="w-full h-12
+             bg-[#111] text-white
+             border border-gray-700 rounded-lg
+             px-4
+             focus:outline-none focus:ring-2 focus:ring-[#0f8238]
+             transition">
+      {% for m in months %}
+        <option value="{{ m }}" {% if m == m2 %}selected{% endif %}>
+          {{ m }}
+        </option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <!-- Compare Button -->
+  <div class="sm:col-span-2 flex items-end">
+    <button
+      class="w-full h-12
+             bg-[#0f8238] hover:bg-green-700
+             text-white font-medium
+             rounded-lg
+             transition">
+      Compare
+    </button>
+  </div>
+
+</form>
+
+{% if comparison %}
+
+{% set i1 = comparison.income[m1] %}
+{% set i2 = comparison.income[m2] %}
+{% set e1 = comparison.expense[m1] %}
+{% set e2 = comparison.expense[m2] %}
+{% set n1 = comparison.net[m1] %}
+{% set n2 = comparison.net[m2] %}
+
+{% set ip = ((i2 - i1) / i1 * 100) if i1 else 0 %}
+{% set ep = ((e2 - e1) / e1 * 100) if e1 else 0 %}
+{% set np = ((n2 - n1) / n1 * 100) if n1 else 0 %}
+
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+
+  <div class="bg-[#1a1a1a] border border-gray-700 rounded-xl p-6 shadow-sm">
+    <p class="text-sm text-gray-400 mb-1">Income</p>
+    <p class="text-2xl font-extrabold text-white">Rs. {{ i2 }}</p>
+    <p class="text-sm {% if ip >= 0 %}text-green-500{% else %}text-red-500{% endif %}">
+      {{ ip | round(1) }}%
+    </p>
+  </div>
+
+  <div class="bg-[#1a1a1a] border border-gray-700 rounded-xl p-6 shadow-sm">
+    <p class="text-sm text-gray-400 mb-1">Expenses</p>
+    <p class="text-2xl font-extrabold text-white">Rs. {{ e2 }}</p>
+    <p class="text-sm {% if ep <= 0 %}text-green-500{% else %}text-red-500{% endif %}">
+      {{ ep | round(1) }}%
+    </p>
+  </div>
+
+  <div class="bg-[#1a1a1a] border border-gray-700 rounded-xl p-6 shadow-sm">
+    <p class="text-sm text-gray-400 mb-1">Net Savings</p>
+    <p class="text-2xl font-extrabold text-white">Rs. {{ n2 }}</p>
+    <p class="text-sm {% if np >= 0 %}text-green-500{% else %}text-red-500{% endif %}">
+      {{ np | round(1) }}%
+    </p>
+  </div>
+
+</div>
+
+<div class="bg-[#1a1a1a] border border-gray-700 rounded-xl p-6 mb-10 shadow-sm">
+  <div class="flex justify-between items-center mb-4">
+    <h3 class="font-semibold text-gray-200">Income vs Expenses</h3>
+
+    <button onclick="toggleChartType()"
+            class="text-sm px-3 py-1 border border-gray-600 rounded hover:bg-[#222]">
+      Toggle Bar / Line
+    </button>
+  </div>
+
+  <div class="h-[280px]">
+    <canvas id="compareChart"></canvas>
+  </div>
+</div>
+
+{% set deltas = {} %}
+{% for cat, vals in comparison.categories.items() %}
+  {% set _ = deltas.update({cat: vals[m2] - vals[m1]}) %}
+{% endfor %}
+{% set worst = deltas | dictsort(by='value') | last %}
+{% set best = deltas | dictsort(by='value') | first %}
+
+<div class="flex flex-wrap gap-4 mb-4 text-sm">
+  <span class="px-3 py-1 rounded bg-red-900/30 text-red-400">
+    ↑ Highest Increase: {{ worst[0] }} (Rs. {{ worst[1] }})
+  </span>
+
+  <span class="px-3 py-1 rounded bg-green-900/30 text-green-400">
+    ↓ Biggest Saving: {{ best[0] }} (Rs. {{ best[1] }})
+  </span>
+</div>
+
+<div class="bg-[#1a1a1a] border border-gray-700 rounded-xl p-6 shadow-sm">
+  <h3 class="font-semibold mb-4 text-gray-200">Category Comparison</h3>
+
+  <table class="w-full text-sm">
+    <thead class="border-b border-gray-700 text-gray-400">
+      <tr>
+        <th class="py-2 text-left">Category</th>
+        <th class="py-2 text-right">{{ m1 }}</th>
+        <th class="py-2 text-right">{{ m2 }}</th>
+        <th class="py-2 text-right">Δ</th>
+        <th class="py-2 text-right">%</th>
+      </tr>
+    </thead>
+
+    <tbody>
+    {% for cat, vals in comparison.categories.items() %}
+      {% set v1 = vals[m1] %}
+      {% set v2 = vals[m2] %}
+      {% set d = v2 - v1 %}
+      {% set p = ((d / v1) * 100) if v1 else 0 %}
+
+      <tr class="border-t border-gray-700
+                 {% if cat == worst[0] %}bg-red-900/10{% elif cat == best[0] %}bg-green-900/10{% endif %}">
+        <td class="py-2">{{ cat }}</td>
+        <td class="text-right">Rs. {{ v1 }}</td>
+        <td class="text-right">Rs. {{ v2 }}</td>
+        <td class="text-right {% if d > 0 %}text-red-400{% else %}text-green-400{% endif %}">
+          Rs. {{ d }}
+        </td>
+        <td class="text-right {% if p > 0 %}text-red-400{% else %}text-green-400{% endif %}">
+          {{ p | round(1) }}%
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<script>
+let chartType = 'bar';
+const ctx = document.getElementById('compareChart');
+
+const chartData = {
+  labels: ['{{ m1 }}', '{{ m2 }}'],
+  datasets: [
+    { label: 'Income', data: [{{ i1 }}, {{ i2 }}] },
+    { label: 'Expenses', data: [{{ e1 }}, {{ e2 }}] }
+  ]
+};
+
+let compareChart = new Chart(ctx, {
+  type: chartType,
+  data: chartData,
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { position: 'bottom' } },
+    scales: { y: { beginAtZero: true } }
+  }
+});
+
+function toggleChartType() {
+  compareChart.destroy();
+  chartType = chartType === 'bar' ? 'line' : 'bar';
+  compareChart = new Chart(ctx, {
+    type: chartType,
+    data: chartData,
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom' } },
+      scales: { y: { beginAtZero: true } }
+    }
+  });
+}
+</script>
+
+{% endif %}
+{% endblock %}
