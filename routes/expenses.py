@@ -17,26 +17,29 @@ def index():
     conn = current_app.db_pool.get_connection()
     try:
         with conn.cursor(dictionary=True) as cur:
-            cur.execute(
-                "SELECT id, amount, category, note, date, attachment, done_by FROM expense WHERE user_id=%s ORDER BY date DESC",
-                (session['user_id'],)
-            )
-            expenses = [
-                {
-                    "id": row['id'],
-                    "amount": float(row['amount']),
-                    "category": row['category'],
-                    "note": row['note'],
-                    "date": row['date'],
-                    "attachment": row['attachment'],
-                    "done_by": row['done_by'],
-                }
-                for row in cur.fetchall()
-            ]
+            cur.execute("""
+                SELECT id, amount, category, note, date, attachment, done_by
+                FROM expense
+                WHERE user_id=%s
+                ORDER BY date DESC
+            """, (session['user_id'],))
+            expenses = cur.fetchall()
 
-            cur.execute("SELECT id, name FROM categories WHERE user_id=%s ORDER BY name", (session['user_id'],))
-            categories = cur.fetchall()
-        return render_template('expenses.html', expenses=expenses, current_date=date.today(), categories=categories)
+            cur.execute("""
+                SELECT default_done_by
+                FROM setting
+                WHERE user_id=%s
+                LIMIT 1
+            """, (session['user_id'],))
+            row = cur.fetchone()
+            default_done_by = row['default_done_by'] if row else None
+
+        return render_template(
+            'expenses.html',
+            expenses=expenses,
+            current_date=date.today(),
+            default_done_by=default_done_by
+        )
     finally:
         conn.close()
 
@@ -99,12 +102,12 @@ def edit_expense(id):
 
             if new_filename:
                 cur.execute(
-                    "UPDATE expense SET amount=%s, category=%s, note=%s, date=%s, attachment=%s done_by=%s WHERE id=%s AND user_id=%s",
+                    "UPDATE expense SET amount=%s, category=%s, note=%s, date=%s, attachment=%s, done_by=%s WHERE id=%s AND user_id=%s",
                     (amount, category, note, date_str, new_filename, done_by, id, session['user_id'])
                 )
             else:
                 cur.execute(
-                    "UPDATE expense SET amount=%s, category=%s, note=%s, date=%s done_by=%s WHERE id=%s AND user_id=%s",
+                    "UPDATE expense SET amount=%s, category=%s, note=%s, date=%s, done_by=%s WHERE id=%s AND user_id=%s",
                     (amount, category, note, date_str, done_by, id, session['user_id'])
                 )
             conn.commit()

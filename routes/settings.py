@@ -10,11 +10,24 @@ def index():
     conn = current_app.db_pool.get_connection()
     try:
         with conn.cursor(dictionary=True) as cur:
-            cur.execute("SELECT monthly_limit, total_savings FROM setting WHERE user_id=%s LIMIT 1", (session['user_id'],))
+            cur.execute("""
+                SELECT monthly_limit, total_savings, default_done_by
+                FROM setting
+                WHERE user_id=%s
+                LIMIT 1
+            """, (session['user_id'],))
             setting = cur.fetchone()
+
             current_limit = float(setting['monthly_limit']) if setting else 0
             total_savings = float(setting['total_savings']) if setting else 0
-        return render_template('settings.html', current_limit=current_limit, total_savings=total_savings)
+            default_done_by = setting['default_done_by'] if setting else None
+
+        return render_template(
+            'settings.html',
+            current_limit=current_limit,
+            total_savings=total_savings,
+            default_done_by=default_done_by
+        )
     finally:
         conn.close()
 
@@ -24,16 +37,28 @@ def index():
 def update_limit():
     limit = request.form['limit']
     savings = request.form['savings']
+    default_done_by = request.form.get('default_done_by')
 
     conn = current_app.db_pool.get_connection()
     try:
         with conn.cursor(dictionary=True) as cur:
             cur.execute("SELECT id FROM setting WHERE user_id=%s LIMIT 1", (session['user_id'],))
             row = cur.fetchone()
+
             if not row:
-                cur.execute("INSERT INTO setting (monthly_limit, total_savings, user_id) VALUES (%s, %s, %s)", (limit, savings, session['user_id']))
+                cur.execute("""
+                    INSERT INTO setting (monthly_limit, total_savings, default_done_by, user_id)
+                    VALUES (%s, %s, %s, %s)
+                """, (limit, savings, default_done_by, session['user_id']))
             else:
-                cur.execute("UPDATE setting SET monthly_limit=%s, total_savings=%s WHERE user_id=%s", (limit, savings, session['user_id']))
+                cur.execute("""
+                    UPDATE setting
+                    SET monthly_limit=%s,
+                        total_savings=%s,
+                        default_done_by=%s
+                    WHERE user_id=%s
+                """, (limit, savings, default_done_by, session['user_id']))
+
             conn.commit()
         return redirect(url_for('settings.index'))
     finally:

@@ -27,7 +27,12 @@
     <!-- Income Panel -->
     <div class="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700
                 rounded-lg shadow-sm p-4 transition">
-      <h3 class="text-lg font-semibold mb-4 text-[#1e90ff] dark:text-[#70b7ff]">Income</h3>
+      <h3 class="text-lg font-semibold mb-4 text-[#1e90ff] dark:text-[#70b7ff] flex justify-between items-center">
+        <span>Income</span>
+        <span class="text-sm font-bold">
+          Rs. {{ total_income_month | round(2) }}
+        </span>
+      </h3>
 
       {% if incomes %}
       <div class="overflow-x-auto">
@@ -57,7 +62,12 @@
     <!-- Expenses Panel -->
     <div class="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700
                 rounded-lg shadow-sm p-4 transition">
-      <h3 class="text-lg font-semibold mb-4 text-[#f3703f] dark:text-[#ff9966]">Expenses</h3>
+      <h3 class="text-lg font-semibold mb-4 text-[#f3703f] dark:text-[#ff9966] flex justify-between items-center">
+        <span>Expenses</span>
+        <span class="text-sm font-bold">
+          Rs. {{ total_expense_month | round(2) }}
+        </span>
+      </h3>
 
       {% if expenses %}
 
@@ -78,8 +88,15 @@
             </thead>
             <tbody>
               {% for exp in expenses %}
-              <tr class="border-t border-gray-200 dark:border-gray-700">
-                <td class="px-4 py-2">Rs. {{ exp.amount }}</td>
+              <tr
+                onclick="window.location='{{ url_for('history.view_archived_expense', id=exp.id) }}'"
+                class="border-t border-gray-200 dark:border-gray-700
+                      cursor-pointer hover:bg-gray-50 dark:hover:bg-[#222]
+                      transition"
+              >
+                <td class="px-4 py-2 font-medium text-[#f3703f] dark:text-[#ff9966]">
+                  Rs. {{ exp.amount }}
+                </td>
                 <td class="px-4 py-2">{{ exp.category }}</td>
                 <td class="px-4 py-2">{{ exp.note or "" }}</td>
                 <td class="px-4 py-2">{{ exp.date }}</td>
@@ -103,8 +120,15 @@
             </thead>
             <tbody>
               {% for exp in expenses %}
-              <tr class="border-t border-gray-200 dark:border-gray-700">
-                <td class="px-4 py-2">Rs. {{ exp.amount }}</td>
+              <tr
+                onclick="window.location='{{ url_for('history.view_archived_expense', id=exp.id) }}'"
+                class="border-t border-gray-200 dark:border-gray-700
+                      cursor-pointer hover:bg-gray-50 dark:hover:bg-[#222]
+                      transition"
+              >
+                <td class="px-4 py-2 font-medium text-[#f3703f] dark:text-[#ff9966]">
+                  Rs. {{ exp.amount }}
+                </td>
                 <td class="px-4 py-2">{{ exp.category }}</td>
                 <td class="px-4 py-2">{{ exp.note or "" }}</td>
                 <td class="px-2 py-2 text-[10px]">{{ exp.date }}</td>

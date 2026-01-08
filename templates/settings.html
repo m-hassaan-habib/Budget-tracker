@@ -31,6 +31,16 @@
         </p>
       </div>
 
+      <div class="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700
+                  rounded-lg p-4 shadow-sm transition-transform transform hover:scale-[1.02] duration-200">
+        <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">
+          Default Expense Person
+        </h3>
+        <p class="text-sm text-gray-500 dark:text-gray-400">
+          Automatically selected when adding a new expense.
+        </p>
+      </div>
+
     </div>
   </div>
 
@@ -42,7 +52,9 @@
           class="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700
                  rounded-lg p-6 shadow-sm space-y-4 transition">
 
-      <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">Update Budget</h3>
+      <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">
+        Update Budget
+      </h3>
 
       <div>
         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -64,6 +76,23 @@
                       focus:ring-[#0f8238] focus:border-[#0f8238] transition-all duration-200">
       </div>
 
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          Default Expense Done By
+        </label>
+        <select name="default_done_by"
+                class="w-full h-12 border border-gray-300 dark:border-gray-700
+                       dark:bg-[#111] dark:text-gray-200 rounded-md px-4 shadow-sm">
+          <option value="">— No Default —</option>
+          <option value="Faisal" {% if default_done_by == "Faisal" %}selected{% endif %}>Faisal</option>
+          <option value="Hassan" {% if default_done_by == "Hassan" %}selected{% endif %}>Hassan</option>
+          <option value="Faran" {% if default_done_by == "Faran" %}selected{% endif %}>Faran</option>
+        </select>
+        <p class="text-[11px] text-gray-500 dark:text-gray-400 mt-1">
+          This will be pre-selected when creating a new expense.
+        </p>
+      </div>
+
       <button type="submit"
               class="mt-4 bg-[#0f8238] text-white px-5 py-2 rounded shadow
                      transition-all duration-200 hover:scale-[1.03] hover:bg-green-700">
@@ -77,7 +106,9 @@
           class="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700
                  rounded-lg p-6 shadow-sm space-y-4 transition">
 
-      <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">End This Month</h3>
+      <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">
+        End This Month
+      </h3>
 
       <p class="text-sm text-gray-600 dark:text-gray-400">
         This will archive income/expenses and move net savings into total.
