@@ -11,16 +11,10 @@
   <div class="sm:col-span-5">
     <label class="block text-xs text-gray-400 mb-1">From</label>
     <select name="m1"
-      class="w-full h-12
-             bg-[#111] text-white
-             border border-gray-700 rounded-lg
-             px-4
-             focus:outline-none focus:ring-2 focus:ring-[#0f8238]
-             transition">
+      class="w-full h-12 bg-[#111] text-white border border-gray-700 rounded-lg px-4
+             focus:outline-none focus:ring-2 focus:ring-[#0f8238] transition">
       {% for m in months %}
-        <option value="{{ m }}" {% if m == m1 %}selected{% endif %}>
-          {{ m }}
-        </option>
+        <option value="{{ m }}" {% if m == m1 %}selected{% endif %}>{{ m }}</option>
       {% endfor %}
     </select>
   </div>
@@ -29,16 +23,10 @@
   <div class="sm:col-span-5">
     <label class="block text-xs text-gray-400 mb-1">To</label>
     <select name="m2"
-      class="w-full h-12
-             bg-[#111] text-white
-             border border-gray-700 rounded-lg
-             px-4
-             focus:outline-none focus:ring-2 focus:ring-[#0f8238]
-             transition">
+      class="w-full h-12 bg-[#111] text-white border border-gray-700 rounded-lg px-4
+             focus:outline-none focus:ring-2 focus:ring-[#0f8238] transition">
       {% for m in months %}
-        <option value="{{ m }}" {% if m == m2 %}selected{% endif %}>
-          {{ m }}
-        </option>
+        <option value="{{ m }}" {% if m == m2 %}selected{% endif %}>{{ m }}</option>
       {% endfor %}
     </select>
   </div>
@@ -46,11 +34,7 @@
   <!-- Compare Button -->
   <div class="sm:col-span-2 flex items-end">
     <button
-      class="w-full h-12
-             bg-[#0f8238] hover:bg-green-700
-             text-white font-medium
-             rounded-lg
-             transition">
+      class="w-full h-12 bg-[#0f8238] hover:bg-green-700 text-white font-medium rounded-lg transition">
       Compare
     </button>
   </div>
@@ -59,17 +43,19 @@
 
 {% if comparison %}
 
-{% set i1 = comparison.income[m1] %}
-{% set i2 = comparison.income[m2] %}
-{% set e1 = comparison.expense[m1] %}
-{% set e2 = comparison.expense[m2] %}
-{% set n1 = comparison.net[m1] %}
-{% set n2 = comparison.net[m2] %}
+{# ---- SAFE LOOKUPS ---- #}
+{% set i1 = comparison.income.get(m1, 0) %}
+{% set i2 = comparison.income.get(m2, 0) %}
+{% set e1 = comparison.expense.get(m1, 0) %}
+{% set e2 = comparison.expense.get(m2, 0) %}
+{% set n1 = comparison.net.get(m1, 0) %}
+{% set n2 = comparison.net.get(m2, 0) %}
 
 {% set ip = ((i2 - i1) / i1 * 100) if i1 else 0 %}
 {% set ep = ((e2 - e1) / e1 * 100) if e1 else 0 %}
 {% set np = ((n2 - n1) / n1 * 100) if n1 else 0 %}
 
+<!-- KPI CARDS -->
 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
 
   <div class="bg-[#1a1a1a] border border-gray-700 rounded-xl p-6 shadow-sm">
@@ -98,10 +84,10 @@
 
 </div>
 
+<!-- CHART -->
 <div class="bg-[#1a1a1a] border border-gray-700 rounded-xl p-6 mb-10 shadow-sm">
   <div class="flex justify-between items-center mb-4">
     <h3 class="font-semibold text-gray-200">Income vs Expenses</h3>
-
     <button onclick="toggleChartType()"
             class="text-sm px-3 py-1 border border-gray-600 rounded hover:bg-[#222]">
       Toggle Bar / Line
@@ -113,10 +99,14 @@
   </div>
 </div>
 
+{# ---- CATEGORY DELTAS (SAFE) ---- #}
 {% set deltas = {} %}
 {% for cat, vals in comparison.categories.items() %}
-  {% set _ = deltas.update({cat: vals[m2] - vals[m1]}) %}
+  {% set v1 = vals.get(m1, 0) %}
+  {% set v2 = vals.get(m2, 0) %}
+  {% set _ = deltas.update({cat: v2 - v1}) %}
 {% endfor %}
+
 {% set worst = deltas | dictsort(by='value') | last %}
 {% set best = deltas | dictsort(by='value') | first %}
 
@@ -124,12 +114,12 @@
   <span class="px-3 py-1 rounded bg-red-900/30 text-red-400">
     ↑ Highest Increase: {{ worst[0] }} (Rs. {{ worst[1] }})
   </span>
-
   <span class="px-3 py-1 rounded bg-green-900/30 text-green-400">
     ↓ Biggest Saving: {{ best[0] }} (Rs. {{ best[1] }})
   </span>
 </div>
 
+<!-- CATEGORY TABLE -->
 <div class="bg-[#1a1a1a] border border-gray-700 rounded-xl p-6 shadow-sm">
   <h3 class="font-semibold mb-4 text-gray-200">Category Comparison</h3>
 
@@ -146,13 +136,14 @@
 
     <tbody>
     {% for cat, vals in comparison.categories.items() %}
-      {% set v1 = vals[m1] %}
-      {% set v2 = vals[m2] %}
+      {% set v1 = vals.get(m1, 0) %}
+      {% set v2 = vals.get(m2, 0) %}
       {% set d = v2 - v1 %}
       {% set p = ((d / v1) * 100) if v1 else 0 %}
 
       <tr class="border-t border-gray-700
-                 {% if cat == worst[0] %}bg-red-900/10{% elif cat == best[0] %}bg-green-900/10{% endif %}">
+                 {% if cat == worst[0] %}bg-red-900/10
+                 {% elif cat == best[0] %}bg-green-900/10{% endif %}">
         <td class="py-2">{{ cat }}</td>
         <td class="text-right">Rs. {{ v1 }}</td>
         <td class="text-right">Rs. {{ v2 }}</td>
