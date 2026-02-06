@@ -1,346 +1,303 @@
 {% extends "base.html" %}
 {% block content %}
 
-<header class="text-center mb-8">
-  <h1 class="text-3xl font-extrabold text-[#0f8238] dark:text-[#5bd68d]">
-    Budget Tracker
+<header class="mb-8">
+  <h1 class="text-2xl font-extrabold text-[#0f8238] dark:text-[#5bd68d]">
+    Dashboard
   </h1>
-  <p class="text-gray-600 dark:text-gray-300 mt-1 text-sm sm:text-base">
-    Take control of your finances with smart expense tracking
+  <p class="text-gray-500 dark:text-gray-400 mt-1 text-sm">
+    Your financial overview at a glance
   </p>
 </header>
 
-<!-- SUMMARY CARDS -->
-<section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 mb-6">
+<!-- MAIN KPI ROW — 3 big cards -->
+<section class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-5">
 
-  <!-- Total Income -->
-  <div class="bg-white dark:bg-[#1a1a1a] border dark:border-gray-800 rounded-lg p-6 shadow-sm relative transition flex flex-col h-full">
-    <div class="absolute top-5 right-5 text-[#1e90ff] dark:text-[#70b7ff]">
-      <i class="fas fa-money-bill-wave fa-lg"></i>
-    </div>
-
-    <div>
-      <h3 class="text-[11px] font-semibold uppercase tracking-wide mb-1 dark:text-gray-300">
-        Total Income
-      </h3>
-      <p class="text-[#1e90ff] dark:text-[#70b7ff] font-extrabold text-lg sm:text-xl">
-        Rs. {{ total_income }}
-      </p>
-      <p class="text-gray-500 dark:text-gray-400 text-xs mt-1">
-        Monthly income
-      </p>
-    </div>
-
-    <div class="mt-auto">
-      <div class="flex justify-between items-center text-xs text-gray-700 dark:text-gray-300 mb-1">
-        <span>vs. Limit</span>
-        <span>Rs. {{ monthly_limit }}</span>
+  <!-- Income -->
+  <div class="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700 rounded-xl p-6 shadow-sm transition">
+    <div class="flex items-center gap-3 mb-4">
+      <div class="w-10 h-10 rounded-lg bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center">
+        <i class="fas fa-arrow-down text-[#1e90ff] dark:text-[#70b7ff]"></i>
       </div>
-      <div class="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-        <div class="h-full bg-[#1e90ff] dark:bg-[#70b7ff] rounded-full transition-all duration-700"
-             style="width: {{ ((monthly_limit / total_income * 100) if (monthly_limit and total_income) else 0) | round(1) }}%;">
-        </div>
+      <div>
+        <p class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Total Income</p>
+        <p class="text-2xl font-extrabold text-[#1e90ff] dark:text-[#70b7ff]">Rs. {{ total_income | round(2) }}</p>
       </div>
     </div>
+    {% if monthly_limit %}
+    <div class="flex justify-between text-xs text-gray-500 dark:text-gray-400 mb-1.5">
+      <span>Budget Limit</span>
+      <span>Rs. {{ monthly_limit | round(2) }}</span>
+    </div>
+    <div class="w-full h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+      <div class="h-full bg-[#1e90ff] dark:bg-[#70b7ff] rounded-full transition-all duration-700"
+           style="width: {{ ((total_income / monthly_limit * 100) if monthly_limit else 0) | clamp(0,100) | round(1) }}%;"></div>
+    </div>
+    {% endif %}
   </div>
 
-  <!-- Monthly Expenses -->
-  <div class="bg-white dark:bg-[#1a1a1a] border dark:border-gray-800 rounded-lg p-6 shadow-sm relative transition flex flex-col h-full">
-    <div class="absolute top-5 right-5 text-[#f3703f] dark:text-[#ff9966]">
-      <i class="fas fa-receipt fa-lg"></i>
-    </div>
-
-    <div>
-      <h3 class="text-[11px] font-semibold uppercase tracking-wide mb-1 dark:text-gray-300">
-        Monthly Expenses
-      </h3>
-      <p class="text-[#f3703f] dark:text-[#ff9966] font-extrabold text-lg sm:text-xl">
-        Rs. {{ total_expenses }}
-      </p>
-      <p class="text-gray-500 dark:text-gray-400 text-xs mt-1">
-        This month's spending
-      </p>
-    </div>
-
-    <div class="mt-auto">
-      <div class="flex justify-between items-center text-xs text-gray-700 dark:text-gray-300 mb-1">
-        <span>rm. Limit</span>
-        <span>Rs. {{ (monthly_limit - total_expenses) | round(2) }}</span>
+  <!-- Expenses -->
+  <div class="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700 rounded-xl p-6 shadow-sm transition">
+    <div class="flex items-center gap-3 mb-4">
+      <div class="w-10 h-10 rounded-lg bg-orange-50 dark:bg-orange-900/20 flex items-center justify-center">
+        <i class="fas fa-arrow-up text-[#f3703f] dark:text-[#ff9966]"></i>
       </div>
-      <div class="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-        <div class="h-full bg-[#f3703f] dark:bg-[#ff9966] rounded-full transition-all duration-700"
-             style="width: {{ (total_expenses / monthly_limit * 100 if monthly_limit else 0) | round(1) }}%;">
-        </div>
+      <div>
+        <p class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Monthly Expenses</p>
+        <p class="text-2xl font-extrabold text-[#f3703f] dark:text-[#ff9966]">Rs. {{ total_expenses | round(2) }}</p>
       </div>
     </div>
+    <div class="flex justify-between text-xs text-gray-500 dark:text-gray-400 mb-1.5">
+      <span>{{ expense_count }} transaction{{ 's' if expense_count != 1 }}</span>
+      {% if monthly_limit %}
+      <span class="{% if total_expenses > monthly_limit %}text-red-500 font-semibold{% endif %}">
+        {{ (total_expenses / monthly_limit * 100) | round(1) if monthly_limit else 0 }}% of limit
+      </span>
+      {% endif %}
+    </div>
+    {% if monthly_limit %}
+    <div class="w-full h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+      <div class="h-full rounded-full transition-all duration-700
+                  {% if total_expenses > monthly_limit %}bg-red-500{% else %}bg-[#f3703f] dark:bg-[#ff9966]{% endif %}"
+           style="width: {{ (total_expenses / monthly_limit * 100 if monthly_limit else 0) | clamp(0, 100) | round(1) }}%;"></div>
+    </div>
+    {% endif %}
   </div>
 
   <!-- Net Savings -->
-  <div class="bg-white dark:bg-[#1a1a1a] border dark:border-gray-800 rounded-lg p-6 shadow-sm relative transition flex flex-col h-full">
-    <div class="absolute top-5 right-5 text-[#0f8238] dark:text-[#36d666]">
-      <i class="fas fa-chart-line fa-lg"></i>
-    </div>
-
-    <div>
-      <h3 class="text-[11px] font-semibold uppercase tracking-wide mb-1 dark:text-gray-300">
-        Net Savings
-      </h3>
-      <p class="text-[#0f8238] dark:text-[#36d666] font-extrabold text-lg sm:text-xl">
-        Rs. {{ net_savings }}
-      </p>
-      <p class="text-gray-500 dark:text-gray-400 text-xs mt-1">
-        Income - Expenses
-      </p>
-    </div>
-
-    <div class="mt-auto">
-      <div class="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-        <div class="h-full {% if net_savings < 0 %}bg-red-500{% else %}bg-[#0f8238] dark:bg-[#36d666]{% endif %} rounded-full transition-all duration-700"
-             style="width: {{ ((net_savings / total_income) * 100 if total_income else 0) | clamp(0,100) | round(1) }}%;">
-        </div>
+  <div class="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700 rounded-xl p-6 shadow-sm transition">
+    <div class="flex items-center gap-3 mb-4">
+      <div class="w-10 h-10 rounded-lg
+                  {% if net_savings >= 0 %}bg-green-50 dark:bg-green-900/20{% else %}bg-red-50 dark:bg-red-900/20{% endif %}
+                  flex items-center justify-center">
+        <i class="fas fa-wallet {% if net_savings >= 0 %}text-[#0f8238] dark:text-[#5bd68d]{% else %}text-red-500{% endif %}"></i>
+      </div>
+      <div>
+        <p class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Net Savings</p>
+        <p class="text-2xl font-extrabold {% if net_savings >= 0 %}text-[#0f8238] dark:text-[#5bd68d]{% else %}text-red-500{% endif %}">
+          Rs. {{ net_savings | round(2) }}
+        </p>
       </div>
     </div>
+    <p class="text-xs text-gray-500 dark:text-gray-400">
+      {% if total_income %}
+        Saving {{ ((net_savings / total_income) * 100) | round(1) }}% of income
+      {% else %}
+        Income - Expenses
+      {% endif %}
+    </p>
+    {% if total_income %}
+    <div class="w-full h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden mt-1.5">
+      <div class="h-full {% if net_savings < 0 %}bg-red-500{% else %}bg-[#0f8238] dark:bg-[#5bd68d]{% endif %} rounded-full transition-all duration-700"
+           style="width: {{ ((net_savings / total_income) * 100 if total_income else 0) | clamp(0,100) | round(1) }}%;"></div>
+    </div>
+    {% endif %}
   </div>
 
+</section>
+
+<!-- SECONDARY ROW — 2 cards -->
+<section class="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-6">
+
   <!-- Total Savings -->
-  <div class="bg-white dark:bg-[#1a1a1a] border dark:border-gray-800 rounded-lg p-6 shadow-sm relative transition flex flex-col h-full">
-    <div class="absolute top-5 right-5 text-[#6466f1] dark:text-[#8f90ff]">
-      <i class="fas fa-credit-card fa-lg"></i>
+  <div class="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700 rounded-xl p-5 shadow-sm transition flex items-center gap-4">
+    <div class="w-10 h-10 rounded-lg bg-indigo-50 dark:bg-indigo-900/20 flex items-center justify-center shrink-0">
+      <i class="fas fa-piggy-bank text-[#6466f1] dark:text-[#8f90ff]"></i>
     </div>
-
-    <div>
-      <h3 class="text-[11px] font-semibold uppercase tracking-wide mb-1 dark:text-gray-300">
-        Total Savings
-      </h3>
-      <p class="text-[#6466f1] dark:text-[#8f90ff] font-extrabold text-lg sm:text-xl">
-        Rs. {{ total_savings }}
-      </p>
-      <p class="text-gray-500 dark:text-gray-400 text-xs mt-1">
-        Accumulated savings
-      </p>
+    <div class="flex-1 min-w-0">
+      <p class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Total Savings</p>
+      <p class="text-xl font-extrabold text-[#6466f1] dark:text-[#8f90ff]">Rs. {{ total_savings | round(2) }}</p>
     </div>
-
-    <div class="mt-auto">
-      <div class="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-        <div class="h-full bg-[#6466f1] dark:bg-[#8f90ff] rounded-full transition-all duration-700"
-             style="width: {{ ((total_savings / monthly_limit) * 100 if monthly_limit else 0) | clamp(0,100) | round(1) }}%;">
-        </div>
-      </div>
-    </div>
+    <p class="text-xs text-gray-400 dark:text-gray-500 shrink-0">Accumulated</p>
   </div>
 
   <!-- Grand Total -->
-  <div class="bg-white dark:bg-[#1a1a1a] border dark:border-gray-800 rounded-lg p-6 shadow-sm relative transition flex flex-col h-full">
-    <div class="absolute top-5 right-5 text-[#9333ea] dark:text-[#c084fc]">
-      <i class="fas fa-coins fa-lg"></i>
+  <div class="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700 rounded-xl p-5 shadow-sm transition flex items-center gap-4">
+    <div class="w-10 h-10 rounded-lg bg-purple-50 dark:bg-purple-900/20 flex items-center justify-center shrink-0">
+      <i class="fas fa-coins text-[#9333ea] dark:text-[#c084fc]"></i>
     </div>
-
-    <div>
-      <h3 class="text-[11px] font-semibold uppercase tracking-wide mb-1 dark:text-gray-300">
-        Grand Total
-      </h3>
-      <p class="text-[#9333ea] dark:text-[#c084fc] font-extrabold text-lg sm:text-xl">
-        Rs. {{ grand_total | round(2) }}
-      </p>
-      <p class="text-gray-500 dark:text-gray-400 text-xs mt-1">
-        Net Savings + Total Savings
-      </p>
+    <div class="flex-1 min-w-0">
+      <p class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Grand Total</p>
+      <p class="text-xl font-extrabold text-[#9333ea] dark:text-[#c084fc]">Rs. {{ grand_total | round(2) }}</p>
     </div>
+    <p class="text-xs text-gray-400 dark:text-gray-500 shrink-0">Net + Saved</p>
   </div>
 
 </section>
 
-
-<!-- GRAPHS -->
-<section class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<!-- CHARTS — 2x2 grid -->
+<section class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
 
   <!-- Category Chart -->
-  <div class="bg-white dark:bg-[#1a1a1a] border dark:border-gray-800 rounded-lg p-6 shadow-sm transition">
-    <h2 class="text-[#0f8238] dark:text-[#5bd68d] font-extrabold text-lg mb-4">Expenses by Category</h2>
-    <div class="h-[250px] w-full">
+  <div class="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700 rounded-xl p-5 shadow-sm transition">
+    <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Expenses by Category</h3>
+    {% if pie_labels %}
+    <div class="h-[240px]">
       <canvas id="categoryChart"></canvas>
     </div>
+    {% else %}
+    <div class="h-[240px] flex items-center justify-center">
+      <p class="text-sm text-gray-400 dark:text-gray-500">No expense data</p>
+    </div>
+    {% endif %}
   </div>
 
   <!-- Daily Chart -->
-  <div class="bg-white dark:bg-[#1a1a1a] border dark:border-gray-800 rounded-lg p-6 shadow-sm transition">
-    <h2 class="text-[#f3703f] dark:text-[#ff9966] font-extrabold text-lg mb-4">
-      Daily Expenses (Last 30 Days)
-    </h2>
-    <div class="h-[250px] w-full">
+  <div class="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700 rounded-xl p-5 shadow-sm transition">
+    <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Daily Expenses</h3>
+    {% if daily_labels %}
+    <div class="h-[240px]">
       <canvas id="dailyChart"></canvas>
     </div>
+    {% else %}
+    <div class="h-[240px] flex items-center justify-center">
+      <p class="text-sm text-gray-400 dark:text-gray-500">No daily data</p>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Savings Trend -->
+  <div class="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700 rounded-xl p-5 shadow-sm transition">
+    <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Savings Trend</h3>
+    {% if savings_labels %}
+    <div class="h-[240px]">
+      <canvas id="savingsChart"></canvas>
+    </div>
+    {% else %}
+    <div class="h-[240px] flex items-center justify-center">
+      <p class="text-sm text-gray-400 dark:text-gray-500">Add data to see trends</p>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- By Person -->
+  <div class="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700 rounded-xl p-5 shadow-sm transition">
+    <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">By Person</h3>
+    {% if who_labels %}
+    <div class="h-[240px]">
+      <canvas id="whoChart"></canvas>
+    </div>
+    {% else %}
+    <div class="h-[240px] flex items-center justify-center">
+      <p class="text-sm text-gray-400 dark:text-gray-500">No expense data</p>
+    </div>
+    {% endif %}
   </div>
 
 </section>
 
-<!-- Savings Trend -->
-<section class="bg-white dark:bg-[#1a1a1a] border dark:border-gray-800 mt-6 rounded-lg p-6 shadow-sm transition">
-  <h2 class="text-[#6466f1] dark:text-[#8f90ff] font-extrabold text-lg mb-4">Savings Trend</h2>
-  <div class="h-[280px] w-full">
-    <canvas id="savingsChart"></canvas>
+<!-- RECENT EXPENSES -->
+<section class="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700 rounded-xl p-5 shadow-sm transition">
+  <div class="flex items-center justify-between mb-4">
+    <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300">Recent Expenses</h3>
+    {% if recent_expenses %}
+    <a href="{{ url_for('expenses.index') }}" class="text-xs text-[#0f8238] dark:text-[#5bd68d] hover:underline">
+      View all <i class="fas fa-arrow-right fa-xs ml-0.5"></i>
+    </a>
+    {% endif %}
   </div>
-</section>
 
-<section class="bg-white dark:bg-[#1a1a1a] border dark:border-gray-800 mt-6 rounded-lg p-6 shadow-sm">
-  <h2 class="text-[#6466f1] dark:text-[#8f90ff] font-extrabold text-lg mb-4">Expense Breakdown by Person</h2>
-  <div class="h-[280px] w-full">
-    <canvas id="whoChart"></canvas>
+  {% if recent_expenses %}
+  <div class="overflow-x-auto -mx-5">
+    <table class="w-full text-sm text-left">
+      <thead class="text-[10px] uppercase text-gray-400 dark:text-gray-500 border-b border-gray-100 dark:border-gray-700/50">
+        <tr>
+          <th class="py-2 pl-5 pr-3">Amount</th>
+          <th class="py-2 px-3">Category</th>
+          <th class="py-2 px-3 hidden sm:table-cell">Note</th>
+          <th class="py-2 pl-3 pr-5 text-right">Date</th>
+        </tr>
+      </thead>
+      <tbody class="text-gray-700 dark:text-gray-300">
+        {% for exp in recent_expenses %}
+        <tr onclick="window.location='{{ url_for('expenses.view_expense', id=exp.id) }}'"
+            class="border-t border-gray-50 dark:border-gray-800 cursor-pointer
+                   hover:bg-gray-50 dark:hover:bg-[#222] transition">
+          <td class="py-2.5 pl-5 pr-3 font-semibold text-[#f3703f] dark:text-[#ff9966]">
+            Rs. {{ exp.amount }}
+          </td>
+          <td class="py-2.5 px-3">
+            <span class="inline-block px-2 py-0.5 text-[11px] rounded-full
+                         bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400">
+              {{ exp.category }}
+            </span>
+          </td>
+          <td class="py-2.5 px-3 text-gray-400 dark:text-gray-500 truncate max-w-[180px] hidden sm:table-cell text-xs">
+            {{ exp.note or "—" }}
+          </td>
+          <td class="py-2.5 pl-3 pr-5 text-right text-xs text-gray-400 dark:text-gray-500">
+            {{ exp.date.strftime('%b %d') }}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
   </div>
+  {% else %}
+  <div class="text-center py-6">
+    <p class="text-sm text-gray-400 dark:text-gray-500">No expenses yet.
+      <a href="{{ url_for('expenses.index') }}" class="text-[#0f8238] dark:text-[#5bd68d] hover:underline">Add one</a>
+    </p>
+  </div>
+  {% endif %}
 </section>
 
 <script>
-
+{% if who_labels %}
 new Chart(document.getElementById('whoChart'), {
   type: 'bar',
   data: {
     labels: {{ who_labels|tojson }},
     datasets: [{
-      label: 'Total',
       data: {{ who_values|tojson }},
-      backgroundColor: [
-        '#003f5c',
-        '#7a5195',
-        '#ff7c43'
-      ],
+      backgroundColor: ['#003f5c', '#7a5195', '#ff7c43', '#ffa600', '#f95d6a'],
       borderRadius: 6
     }]
   },
   options: {
-    responsive: true,
-    maintainAspectRatio: false,
+    responsive: true, maintainAspectRatio: false, indexAxis: 'y',
     plugins: { legend: { display: false } },
-    scales: {
-      y: {
-        beginAtZero: true,
-        ticks: { font: { size: 10 } }
-      },
-      x: {
-        ticks: { font: { size: 10 } }
-      }
-    }
+    scales: { x: { beginAtZero: true, grid: { display: false }, ticks: { font: { size: 10 } } }, y: { grid: { display: false }, ticks: { font: { size: 11 } } } }
   }
 });
+{% endif %}
 
-
-  new Chart(document.getElementById('categoryChart'), {
-  type: 'pie',
+{% if pie_labels %}
+new Chart(document.getElementById('categoryChart'), {
+  type: 'doughnut',
   data: {
     labels: {{ pie_labels|tojson }},
-    datasets: [{
-      data: {{ pie_values|tojson }},
-      backgroundColor: [
-        '#003f5c', '#2f4b7c', '#665191', '#a05195', '#d45087',
-        '#f95d6a', '#ff7c43', '#ffa600', '#ffd166', '#f6c667'
-      ],
-      borderColor: '#f7f8fa',
-      borderWidth: 0
-    }]
+    datasets: [{ data: {{ pie_values|tojson }}, backgroundColor: ['#003f5c','#2f4b7c','#665191','#a05195','#d45087','#f95d6a','#ff7c43','#ffa600','#ffd166','#f6c667'], borderWidth: 0 }]
   },
-  options: {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        position: 'bottom',
-        labels: {
-          boxWidth: 12,
-          padding: 10
-        }
-      }
-    }
-  }
+  options: { responsive: true, maintainAspectRatio: false, cutout: '55%', plugins: { legend: { position: 'right', labels: { boxWidth: 10, padding: 6, font: { size: 10 } } } } }
 });
+{% endif %}
 
-
-
-  new Chart(document.getElementById('dailyChart'), {
+{% if daily_labels %}
+new Chart(document.getElementById('dailyChart'), {
   type: 'bar',
   data: {
     labels: {{ daily_labels|tojson }},
-    datasets: [{
-      label: 'Daily',
-      data: {{ daily_values|tojson }},
-      backgroundColor: [
-        '#58508d', '#7a5195', '#10b981', '#2ec4b6', '#00bfae',
-        '#ff6361', '#ff6e54', '#ffa600', '#bc5090', '#003f5c'
-      ],
-      // Optionally force bar width:
-      barThickness: 50
-    }]
+    datasets: [{ data: {{ daily_values|tojson }}, backgroundColor: 'rgba(243,112,63,0.7)', borderRadius: 4 }]
   },
-  options: {
-    responsive: true,
-    maintainAspectRatio: true,
-    scales: {
-      x: {
-        grid: { display: false },
-        ticks: { font: { size: 10 } },
-        // Slim bars using percentage of space:
-        categoryPercentage: 0.6,
-        barPercentage: 0.6
-      },
-      y: {
-        grid: { display: false },
-        beginAtZero: true,
-        ticks: { font: { size: 10 } }
-      }
-    },
-    plugins: {
-      legend: { display: false }
-    }
-  }
+  options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false }, ticks: { font: { size: 9 }, maxRotation: 45 } }, y: { grid: { display: false }, beginAtZero: true, ticks: { font: { size: 10 } } } } }
 });
+{% endif %}
 
-
-const el = document.getElementById('savingsChart');
-const ctx = el.getContext('2d');
-const SAVINGS = {{ savings_values|tojson }};
-
-new Chart(ctx, {
+{% if savings_labels %}
+new Chart(document.getElementById('savingsChart'), {
   type: 'line',
   data: {
     labels: {{ savings_labels|tojson }},
     datasets: [{
-      label: 'Savings',
-      data: SAVINGS,
-      fill: 'start',
-      borderColor: '#663399',
-      backgroundColor: (c) => {
-        const {ctx, chartArea} = c.chart;
-        if (!chartArea) return null;
-        const g = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
-        g.addColorStop(0.4, 'rgba(102,51,153,0.9)');
-        g.addColorStop(0.75, 'rgba(102,51,153,0.5)');
-        g.addColorStop(1.0, 'rgba(255,255,255,0.0)');
-        return g;
-      },
-      pointRadius: 3,
-      pointHoverRadius: 5,
-      pointBackgroundColor: '#663399',
-      pointBorderWidth: 1,
-      tension: 0.4
+      label: 'Savings', data: {{ savings_values|tojson }}, fill: true,
+      borderColor: '#663399', backgroundColor: 'rgba(102,51,153,0.15)',
+      pointRadius: 3, pointHoverRadius: 5, pointBackgroundColor: '#663399', tension: 0.4
     }]
   },
-  options: {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: { display: true, labels: { color: '#333', font: { size: 12 } } },
-      tooltip: { mode: 'index', intersect: false }
-    },
-    scales: {
-      x: { ticks: { font: { size: 10 } }, grid: { display: false } },
-      y: {
-        beginAtZero: true,
-        suggestedMax: Math.max(...SAVINGS) * 2,
-        ticks: { font: { size: 10 } },
-        grid: { display: false }
-      }
-    }
-  }
+  options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { mode: 'index', intersect: false } }, scales: { x: { ticks: { font: { size: 10 } }, grid: { display: false } }, y: { beginAtZero: true, ticks: { font: { size: 10 } }, grid: { display: false } } } }
 });
-
+{% endif %}
 </script>
 
 {% endblock %}

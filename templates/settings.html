@@ -1,149 +1,257 @@
 {% extends "base.html" %}
 {% block content %}
 
-<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mx-auto w-full max-w-full">
+<div class="w-full max-w-full mx-auto">
 
-  <!-- LEFT COLUMN -->
-  <div class="space-y-6">
-    <div>
-      <h2 class="text-2xl font-bold text-[#0f8238] dark:text-[#5bd68d]">Settings</h2>
-      <p class="text-sm text-gray-600 dark:text-gray-300">
-        Adjust your budget and reset controls.
-      </p>
-    </div>
-
-    <!-- Info Cards -->
-    <div class="space-y-6">
-
-      <div class="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700
-                  rounded-lg p-4 shadow-sm transition-transform transform hover:scale-[1.02] duration-200">
-        <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">Monthly Limit</h3>
-        <p class="text-sm text-gray-500 dark:text-gray-400">
-          Control how much you want to spend per month. This limit is shown on the dashboard.
-        </p>
-      </div>
-
-      <div class="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700
-                  rounded-lg p-4 shadow-sm transition-transform transform hover:scale-[1.02] duration-200">
-        <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">Total Savings</h3>
-        <p class="text-sm text-gray-500 dark:text-gray-400">
-          This is the manually entered total savings value. It updates every month.
-        </p>
-      </div>
-
-      <div class="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700
-                  rounded-lg p-4 shadow-sm transition-transform transform hover:scale-[1.02] duration-200">
-        <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">
-          Default Expense Person
-        </h3>
-        <p class="text-sm text-gray-500 dark:text-gray-400">
-          Automatically selected when adding a new expense.
-        </p>
-      </div>
-
-    </div>
+  <div class="mb-6">
+    <h2 class="text-xl font-bold text-[#0f8238] dark:text-[#5bd68d]">Settings</h2>
+    <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Manage your budget limits, savings, and monthly cycle</p>
   </div>
 
-  <!-- RIGHT COLUMN (FORMS) -->
-  <div class="md:col-span-2 space-y-6">
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-    <!-- Update Budget Form -->
-    <form method="POST" action="{{ url_for('settings.update_limit') }}"
-          class="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700
-                 rounded-lg p-6 shadow-sm space-y-4 transition">
+    <!-- LEFT: Current Month Snapshot -->
+    <div class="space-y-4">
 
-      <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">
-        Update Budget
-      </h3>
+      <div class="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700
+                  rounded-lg p-5 shadow-sm transition">
+        <h3 class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-4">
+          Current Month
+        </h3>
 
-      <div>
-        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-          Monthly Expense Limit (Rs)
-        </label>
-        <input type="number" step="0.01" name="limit" required value="{{ current_limit }}"
-               class="w-full h-12 border border-gray-300 dark:border-gray-700
-                      dark:bg-[#111] dark:text-gray-200 rounded-md px-4 shadow-sm
-                      focus:ring-[#0f8238] focus:border-[#0f8238] transition-all duration-200">
+        <div class="space-y-4">
+          <!-- Income -->
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <div class="w-8 h-8 rounded-full bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center">
+                <i class="fas fa-arrow-down text-xs text-[#1e90ff] dark:text-[#70b7ff]"></i>
+              </div>
+              <div>
+                <p class="text-xs text-gray-500 dark:text-gray-400">Income</p>
+                <p class="text-sm font-semibold text-gray-800 dark:text-gray-200">Rs. {{ month_income | round(2) }}</p>
+              </div>
+            </div>
+            <span class="text-xs text-gray-400 dark:text-gray-500">{{ income_count }} item{{ 's' if income_count != 1 }}</span>
+          </div>
+
+          <!-- Expenses -->
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <div class="w-8 h-8 rounded-full bg-orange-50 dark:bg-orange-900/20 flex items-center justify-center">
+                <i class="fas fa-arrow-up text-xs text-[#f3703f] dark:text-[#ff9966]"></i>
+              </div>
+              <div>
+                <p class="text-xs text-gray-500 dark:text-gray-400">Expenses</p>
+                <p class="text-sm font-semibold text-gray-800 dark:text-gray-200">Rs. {{ month_expenses | round(2) }}</p>
+              </div>
+            </div>
+            <span class="text-xs text-gray-400 dark:text-gray-500">{{ expense_count }} item{{ 's' if expense_count != 1 }}</span>
+          </div>
+
+          <!-- Divider -->
+          <div class="border-t border-gray-200 dark:border-gray-700"></div>
+
+          <!-- Net -->
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <div class="w-8 h-8 rounded-full
+                          {% if month_net >= 0 %}bg-green-50 dark:bg-green-900/20{% else %}bg-red-50 dark:bg-red-900/20{% endif %}
+                          flex items-center justify-center">
+                <i class="fas fa-wallet text-xs
+                          {% if month_net >= 0 %}text-[#0f8238] dark:text-[#5bd68d]{% else %}text-red-500{% endif %}"></i>
+              </div>
+              <div>
+                <p class="text-xs text-gray-500 dark:text-gray-400">Net Savings</p>
+                <p class="text-sm font-bold {% if month_net >= 0 %}text-[#0f8238] dark:text-[#5bd68d]{% else %}text-red-500{% endif %}">
+                  Rs. {{ month_net | round(2) }}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <div>
-        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-          Current Total Savings (Rs)
-        </label>
-        <input type="number" step="0.01" name="savings" required value="{{ total_savings }}"
-               class="w-full h-12 border border-gray-300 dark:border-gray-700
-                      dark:bg-[#111] dark:text-gray-200 rounded-md px-4 shadow-sm
-                      focus:ring-[#0f8238] focus:border-[#0f8238] transition-all duration-200">
+      <!-- Quick Stats -->
+      <div class="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700
+                  rounded-lg p-5 shadow-sm transition">
+        <h3 class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-3">
+          Overview
+        </h3>
+        <div class="space-y-3 text-sm">
+          <div class="flex justify-between">
+            <span class="text-gray-500 dark:text-gray-400">Monthly Limit</span>
+            <span class="font-semibold text-gray-800 dark:text-gray-200">Rs. {{ current_limit | round(2) }}</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-gray-500 dark:text-gray-400">Total Savings</span>
+            <span class="font-semibold text-[#6466f1] dark:text-[#8f90ff]">Rs. {{ total_savings | round(2) }}</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-gray-500 dark:text-gray-400">Archived Months</span>
+            <span class="font-semibold text-gray-800 dark:text-gray-200">{{ archived_months }}</span>
+          </div>
+          {% if current_limit > 0 %}
+          <div class="flex justify-between">
+            <span class="text-gray-500 dark:text-gray-400">Limit Used</span>
+            <span class="font-semibold {% if month_expenses > current_limit %}text-red-500{% else %}text-gray-800 dark:text-gray-200{% endif %}">
+              {{ ((month_expenses / current_limit) * 100) | round(1) }}%
+            </span>
+          </div>
+          <div class="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+            <div class="h-full rounded-full transition-all duration-500
+                        {% if month_expenses > current_limit %}bg-red-500{% else %}bg-[#0f8238] dark:bg-[#5bd68d]{% endif %}"
+                 style="width: {{ [((month_expenses / current_limit) * 100), 100] | min }}%;"></div>
+          </div>
+          {% endif %}
+        </div>
       </div>
 
-      <div>
-        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-          Default Expense Done By
-        </label>
-        <select name="default_done_by"
-                class="w-full h-12 border border-gray-300 dark:border-gray-700
-                       dark:bg-[#111] dark:text-gray-200 rounded-md px-4 shadow-sm">
-          <option value="">— No Default —</option>
-          <option value="Faisal" {% if default_done_by == "Faisal" %}selected{% endif %}>Faisal</option>
-          <option value="Hassan" {% if default_done_by == "Hassan" %}selected{% endif %}>Hassan</option>
-          <option value="Faran" {% if default_done_by == "Faran" %}selected{% endif %}>Faran</option>
-        </select>
-        <p class="text-[11px] text-gray-500 dark:text-gray-400 mt-1">
-          This will be pre-selected when creating a new expense.
+    </div>
+
+    <!-- RIGHT: Forms -->
+    <div class="lg:col-span-2 space-y-6">
+
+      <!-- Update Budget Form -->
+      <form method="POST" action="{{ url_for('settings.update_limit') }}"
+            class="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700
+                   rounded-lg p-6 shadow-sm transition">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <h3 class="text-base font-semibold text-gray-800 dark:text-gray-200 mb-4">
+          <i class="fas fa-sliders-h mr-2 text-[#0f8238] dark:text-[#5bd68d]"></i>
+          Budget Settings
+        </h3>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Monthly Expense Limit (Rs)
+            </label>
+            <input type="number" step="0.01" name="limit" required value="{{ current_limit }}"
+                   class="w-full h-11 border border-gray-300 dark:border-gray-700
+                          dark:bg-[#222] dark:text-gray-200 rounded-lg px-4 shadow-sm text-sm
+                          focus:ring-[#0f8238] focus:border-[#0f8238] transition">
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Current Total Savings (Rs)
+            </label>
+            <input type="number" step="0.01" name="savings" required value="{{ total_savings }}"
+                   class="w-full h-11 border border-gray-300 dark:border-gray-700
+                          dark:bg-[#222] dark:text-gray-200 rounded-lg px-4 shadow-sm text-sm
+                          focus:ring-[#0f8238] focus:border-[#0f8238] transition">
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Default Expense Done By
+            </label>
+            <select name="default_done_by"
+                    class="w-full h-11 border border-gray-300 dark:border-gray-700
+                           dark:bg-[#222] dark:text-gray-200 rounded-lg px-4 shadow-sm text-sm
+                           focus:ring-[#0f8238] focus:border-[#0f8238]">
+              <option value="">-- No Default --</option>
+              <option value="Faisal" {% if default_done_by == "Faisal" %}selected{% endif %}>Faisal</option>
+              <option value="Hassan" {% if default_done_by == "Hassan" %}selected{% endif %}>Hassan</option>
+              <option value="Faran" {% if default_done_by == "Faran" %}selected{% endif %}>Faran</option>
+            </select>
+          </div>
+        </div>
+
+        <button type="submit"
+                class="mt-5 bg-[#0f8238] text-white px-5 py-2.5 rounded-lg shadow-sm
+                       hover:bg-green-700 transition font-medium text-sm">
+          <i class="fas fa-save mr-1"></i> Save Changes
+        </button>
+
+      </form>
+
+      <!-- End Month -->
+      <div class="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700
+                  rounded-lg p-6 shadow-sm transition">
+
+        <h3 class="text-base font-semibold text-gray-800 dark:text-gray-200 mb-2">
+          <i class="fas fa-calendar-check mr-2 text-blue-600 dark:text-blue-400"></i>
+          End This Month
+        </h3>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
+          Archives current income &amp; expenses, adds net savings to your total, and clears the month.
         </p>
+
+        <!-- Preview of what will be archived -->
+        {% if income_count > 0 or expense_count > 0 %}
+        <div class="bg-gray-50 dark:bg-[#222] rounded-lg p-4 mb-4 text-sm">
+          <p class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-2">
+            Will be archived
+          </p>
+          <div class="grid grid-cols-3 gap-3">
+            <div>
+              <p class="text-xs text-gray-400 dark:text-gray-500">Income</p>
+              <p class="font-semibold text-[#1e90ff] dark:text-[#70b7ff]">Rs. {{ month_income | round(2) }}</p>
+            </div>
+            <div>
+              <p class="text-xs text-gray-400 dark:text-gray-500">Expenses</p>
+              <p class="font-semibold text-[#f3703f] dark:text-[#ff9966]">Rs. {{ month_expenses | round(2) }}</p>
+            </div>
+            <div>
+              <p class="text-xs text-gray-400 dark:text-gray-500">Net added to savings</p>
+              <p class="font-semibold {% if month_net >= 0 %}text-[#0f8238] dark:text-[#5bd68d]{% else %}text-red-500{% endif %}">
+                Rs. {{ month_net | round(2) }}
+              </p>
+            </div>
+          </div>
+          <p class="text-xs text-gray-400 dark:text-gray-500 mt-2">
+            New total savings will be: <strong class="text-gray-700 dark:text-gray-300">Rs. {{ (total_savings + month_net) | round(2) }}</strong>
+          </p>
+        </div>
+        {% endif %}
+
+        <form method="POST" action="{{ url_for('settings.end_month') }}"
+              onsubmit="return confirm('Archive this month? Income and expenses will be moved to history and cleared.')">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit"
+                  class="w-full bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-400
+                         text-white px-5 py-2.5 rounded-lg shadow-sm transition font-medium text-sm
+                         {% if income_count == 0 and expense_count == 0 %}opacity-50 cursor-not-allowed{% endif %}"
+                  {% if income_count == 0 and expense_count == 0 %}disabled{% endif %}>
+            <i class="fas fa-archive mr-1"></i>
+            Archive &amp; End Month
+          </button>
+        </form>
+
+        {% if income_count == 0 and expense_count == 0 %}
+        <p class="text-xs text-gray-400 dark:text-gray-500 mt-2 text-center">Nothing to archive this month</p>
+        {% endif %}
       </div>
 
-      <button type="submit"
-              class="mt-4 bg-[#0f8238] text-white px-5 py-2 rounded shadow
-                     transition-all duration-200 hover:scale-[1.03] hover:bg-green-700">
-        Save Changes
-      </button>
+      <!-- Fresh Start -->
+      <form method="POST" action="{{ url_for('settings.fresh_start') }}"
+            onsubmit="return confirm('This will PERMANENTLY delete all data including archived history, income, expenses, and settings. This cannot be undone. Are you sure?')"
+            class="bg-white dark:bg-[#1a1a1a] border border-red-200 dark:border-red-800/40
+                   rounded-lg p-6 shadow-sm transition">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
-    </form>
+        <h3 class="text-base font-semibold text-red-600 dark:text-red-400 mb-2">
+          <i class="fas fa-exclamation-triangle mr-2"></i>
+          Fresh Start
+        </h3>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
+          Permanently deletes <strong>everything</strong>: income, expenses, savings, limits, and all archived history.
+          This cannot be undone.
+        </p>
 
-    <!-- End Month Form -->
-    <form method="POST" action="{{ url_for('settings.end_month') }}"
-          class="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700
-                 rounded-lg p-6 shadow-sm space-y-4 transition">
+        <button type="submit"
+                class="w-full border border-red-300 dark:border-red-700 text-red-600 dark:text-red-400
+                       hover:bg-red-600 hover:text-white hover:border-red-600
+                       dark:hover:bg-red-600 dark:hover:text-white dark:hover:border-red-600
+                       px-5 py-2.5 rounded-lg shadow-sm transition font-medium text-sm">
+          <i class="fas fa-trash mr-1"></i> Delete Everything &amp; Reset
+        </button>
 
-      <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">
-        End This Month
-      </h3>
+      </form>
 
-      <p class="text-sm text-gray-600 dark:text-gray-400">
-        This will archive income/expenses and move net savings into total.
-      </p>
-
-      <button type="submit"
-              class="w-full bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-400
-                     text-white px-5 py-2 rounded shadow transition-all duration-200 hover:scale-[1.03]">
-        End Month
-      </button>
-
-    </form>
-
-    <!-- Fresh Start Form -->
-    <form method="POST" action="{{ url_for('settings.fresh_start') }}"
-          onsubmit="return confirm('Are you sure? This will permanently delete everything.')"
-          class="bg-white dark:bg-[#1a1a1a] border border-red-300 dark:border-red-700
-                 rounded-lg p-6 shadow-sm space-y-4 transition">
-
-      <h3 class="text-lg font-semibold text-red-600 dark:text-red-400 mb-4">
-        Fresh Start
-      </h3>
-
-      <p class="text-sm text-gray-600 dark:text-gray-400">
-        Resets everything: income, expenses, savings, limits, history.
-      </p>
-
-      <button type="submit"
-              class="w-full border border-red-500 text-red-600 dark:border-red-400 dark:text-red-400
-                     hover:bg-red-600 hover:text-white dark:hover:bg-red-500 dark:hover:text-white
-                     px-5 py-2 rounded shadow transition-all duration-200 hover:scale-[1.03]">
-        Reset Everything
-      </button>
-
-    </form>
+    </div>
 
   </div>
 

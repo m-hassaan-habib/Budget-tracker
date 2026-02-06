@@ -1,0 +1,247 @@
+{% extends "base.html" %}
+
+<style>
+.select2-results__option .opt { display:flex; align-items:center; gap:8px }
+.select2-results__option .ico { width:22px; min-width:22px; text-align:center; font-size:16px; line-height:1 }
+.select2-container--default .select2-selection__rendered .opt { display:flex; align-items:center; gap:8px }
+.select2-container--default .select2-selection--single .select2-selection__rendered .ico {
+  width:18px; min-width:18px; text-align:center; font-size:14px; line-height:1;
+}
+</style>
+
+{% block content %}
+
+<div class="max-w-2xl mx-auto">
+
+  <!-- Header -->
+  <div class="flex items-center gap-3 mb-6">
+    <a href="{{ url_for('expenses.index') }}"
+       class="w-9 h-9 rounded-lg border border-gray-200 dark:border-gray-700 flex items-center justify-center
+              text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600 transition">
+      <i class="fas fa-arrow-left fa-sm"></i>
+    </a>
+    <div>
+      <h2 class="text-xl font-bold text-gray-900 dark:text-gray-100">Edit Expense</h2>
+      <p class="text-sm text-gray-500 dark:text-gray-400">Update expense details</p>
+    </div>
+  </div>
+
+  <!-- Form -->
+  <form method="POST" action="{{ url_for('expenses.edit_expense', id=expense.id) }}"
+        enctype="multipart/form-data"
+        class="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700
+               rounded-xl shadow-sm p-6 transition">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+
+      <!-- Amount -->
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+          Amount (Rs) <span class="text-red-400">*</span>
+        </label>
+        <input type="number" name="amount" step="0.01" required autofocus min="0"
+               value="{{ expense.amount }}"
+               class="w-full h-12 border border-gray-300 dark:border-gray-600
+                      bg-white dark:bg-[#222] text-gray-900 dark:text-gray-100
+                      rounded-lg shadow-sm px-4 text-sm
+                      focus:ring-2 focus:ring-[#0f8238] focus:border-[#0f8238] transition
+                      placeholder:text-gray-400 dark:placeholder:text-gray-500">
+      </div>
+
+      <!-- Date -->
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+          Date <span class="text-red-400">*</span>
+        </label>
+        <input type="date" name="date" value="{{ expense.date }}" required
+               class="w-full h-12 border border-gray-300 dark:border-gray-600
+                      bg-white dark:bg-[#222] text-gray-900 dark:text-gray-100
+                      rounded-lg shadow-sm px-4 text-sm
+                      focus:ring-2 focus:ring-[#0f8238] focus:border-[#0f8238] transition">
+      </div>
+
+      <!-- Category -->
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+          Category <span class="text-red-400">*</span>
+        </label>
+        <select id="editCategory" name="category" class="select2 w-full" required>
+          <option disabled value="">Select Category</option>
+          <option data-icon="fas fa-gem" data-color="#8b5cf6" value="Acessories" {% if expense.category == "Acessories" %}selected{% endif %}>Accessories</option>
+          <option data-icon="fas fa-baby-carriage" data-color="#fbbf24" value="Baby Food" {% if expense.category == "Baby Food" %}selected{% endif %}>Baby Food</option>
+          <option data-icon="fas fa-bread-slice" data-color="#f59e0b" value="Bakery" {% if expense.category == "Bakery" %}selected{% endif %}>Bakery</option>
+          <option data-icon="fas fa-file-invoice-dollar" data-color="#ef4444" value="Bills" {% if expense.category == "Bills" %}selected{% endif %}>Bills</option>
+          <option data-icon="fas fa-hand-holding-heart" data-color="#ef4444" value="Charity" {% if expense.category == "Charity" %}selected{% endif %}>Charity</option>
+          <option data-icon="fas fa-broom" data-color="#a3a3a3" value="Cleaning" {% if expense.category == "Cleaning" %}selected{% endif %}>Cleaning</option>
+          <option data-icon="fas fa-tshirt" data-color="#3b82f6" value="Clothing" {% if expense.category == "Clothing" %}selected{% endif %}>Clothing</option>
+          <option data-icon="fas fa-cloud" data-color="#60a5fa" value="Cloud" {% if expense.category == "Cloud" %}selected{% endif %}>Cloud</option>
+          <option data-icon="fas fa-mug-hot" data-color="#a16207" value="Coffee/Tea" {% if expense.category == "Coffee/Tea" %}selected{% endif %}>Coffee/Tea</option>
+          <option data-icon="fas fa-shipping-fast" data-color="#8b5cf6" value="Courier/Shipping" {% if expense.category == "Courier/Shipping" %}selected{% endif %}>Courier/Shipping</option>
+          <option data-icon="fas fa-globe" data-color="#10b981" value="Domain" {% if expense.category == "Domain" %}selected{% endif %}>Domain</option>
+          <option data-icon="fas fa-utensils" data-color="#10b981" value="Eat Out" {% if expense.category == "Eat Out" %}selected{% endif %}>Eat Out</option>
+          <option data-icon="fas fa-book" data-color="#0ea5e9" value="Education" {% if expense.category == "Education" %}selected{% endif %}>Education</option>
+          <option data-icon="fas fa-laptop" data-color="#0284c7" value="Electronics" {% if expense.category == "Electronics" %}selected{% endif %}>Electronics</option>
+          <option data-icon="fas fa-film" data-color="#f472b6" value="Entertainment" {% if expense.category == "Entertainment" %}selected{% endif %}>Entertainment</option>
+          <option data-icon="fas fa-gift" data-color="#f59e0b" value="Family Gift" {% if expense.category == "Family Gift" %}selected{% endif %}>Family Gift</option>
+          <option data-icon="fas fa-dumbbell" data-color="#10b981" value="Fitness" {% if expense.category == "Fitness" %}selected{% endif %}>Fitness</option>
+          <option data-icon="fas fa-motorcycle" data-color="#f97316" value="Food Delivery" {% if expense.category == "Food Delivery" %}selected{% endif %}>Food Delivery</option>
+          <option data-icon="fas fa-apple-alt" data-color="#22c55e" value="Fruits & Veg" {% if expense.category == "Fruits & Veg" %}selected{% endif %}>Fruits & Veg</option>
+          <option data-icon="fas fa-gas-pump" data-color="#f59e0b" value="Fuel" {% if expense.category == "Fuel" %}selected{% endif %}>Fuel</option>
+          <option data-icon="fas fa-couch" data-color="#a16207" value="Furniture" {% if expense.category == "Furniture" %}selected{% endif %}>Furniture</option>
+          <option data-icon="fas fa-seedling" data-color="#16a34a" value="Gardening" {% if expense.category == "Gardening" %}selected{% endif %}>Gardening</option>
+          <option data-icon="fas fa-shopping-cart" data-color="#22c55e" value="Grocery" {% if expense.category == "Grocery" %}selected{% endif %}>Grocery</option>
+          <option data-icon="fas fa-heartbeat" data-color="#ef4444" value="Healthcare" {% if expense.category == "Healthcare" %}selected{% endif %}>Healthcare</option>
+          <option data-icon="fas fa-hammer" data-color="#f59e0b" value="Home Improvement" {% if expense.category == "Home Improvement" %}selected{% endif %}>Home Improvement</option>
+          <option data-icon="fas fa-server" data-color="#4b5563" value="Hosting" {% if expense.category == "Hosting" %}selected{% endif %}>Hosting</option>
+          <option data-icon="fas fa-home" data-color="#64748b" value="Household Expense" {% if expense.category == "Household Expense" %}selected{% endif %}>Household Expense</option>
+          <option data-icon="fas fa-shield-alt" data-color="#0ea5e9" value="Insurance" {% if expense.category == "Insurance" %}selected{% endif %}>Insurance</option>
+          <option data-icon="fas fa-wifi" data-color="#6366f1" value="Internet" {% if expense.category == "Internet" %}selected{% endif %}>Internet</option>
+          <option data-icon="fas fa-chart-line" data-color="#0ea5e9" value="Investment" {% if expense.category == "Investment" %}selected{% endif %}>Investment</option>
+          <option data-icon="fas fa-tint" data-color="#06b6d4" value="Laundry" {% if expense.category == "Laundry" %}selected{% endif %}>Laundry</option>
+          <option data-icon="fas fa-hand-holding-usd" data-color="#22c55e" value="Lend Money" {% if expense.category == "Lend Money" %}selected{% endif %}>Lend Money</option>
+          <option data-icon="fas fa-credit-card" data-color="#ef4444" value="Loan Payment" {% if expense.category == "Loan Payment" %}selected{% endif %}>Loan Payment</option>
+          <option data-icon="fas fa-drumstick-bite" data-color="#ef4444" value="Meat & Poultry" {% if expense.category == "Meat & Poultry" %}selected{% endif %}>Meat & Poultry</option>
+          <option data-icon="fas fa-ellipsis-h" data-color="#9ca3af" value="Miscellaneous" {% if expense.category == "Miscellaneous" %}selected{% endif %}>Miscellaneous</option>
+          <option data-icon="fas fa-sim-card" data-color="#06b6d4" value="Mobile Top-up" {% if expense.category == "Mobile Top-up" %}selected{% endif %}>Mobile Top-up</option>
+          <option data-icon="fas fa-tree" data-color="#16a34a" value="Outdoor" {% if expense.category == "Outdoor" %}selected{% endif %}>Outdoor</option>
+          <option data-icon="fas fa-parking" data-color="#3b82f6" value="Parking" {% if expense.category == "Parking" %}selected{% endif %}>Parking</option>
+          <option data-icon="fas fa-paw" data-color="#84cc16" value="Pets" {% if expense.category == "Pets" %}selected{% endif %}>Pets</option>
+          <option data-icon="fas fa-pills" data-color="#22c55e" value="Pharmacy" {% if expense.category == "Pharmacy" %}selected{% endif %}>Pharmacy</option>
+          <option data-icon="fas fa-mobile-alt" data-color="#06b6d4" value="Phone" {% if expense.category == "Phone" %}selected{% endif %}>Phone</option>
+          <option data-icon="fas fa-home" data-color="#4b5563" value="Rent" {% if expense.category == "Rent" %}selected{% endif %}>Rent</option>
+          <option data-icon="fas fa-tools" data-color="#9ca3af" value="Repair" {% if expense.category == "Repair" %}selected{% endif %}>Repair</option>
+          <option data-icon="fas fa-taxi" data-color="#f59e0b" value="Ride-hailing" {% if expense.category == "Ride-hailing" %}selected{% endif %}>Ride-hailing</option>
+          <option data-icon="fas fa-shopping-bag" data-color="#8b5cf6" value="Shopping" {% if expense.category == "Shopping" %}selected{% endif %}>Shopping</option>
+          <option data-icon="fas fa-cookie-bite" data-color="#f59e0b" value="Snacking" {% if expense.category == "Snacking" %}selected{% endif %}>Snacking</option>
+          <option data-icon="fas fa-code" data-color="#0ea5e9" value="Software" {% if expense.category == "Software" %}selected{% endif %}>Software</option>
+          <option data-icon="fas fa-pen" data-color="#6b7280" value="Stationery" {% if expense.category == "Stationery" %}selected{% endif %}>Stationery</option>
+          <option data-icon="fas fa-redo-alt" data-color="#6366f1" value="Subscriptions" {% if expense.category == "Subscriptions" %}selected{% endif %}>Subscriptions</option>
+          <option data-icon="fas fa-file-invoice" data-color="#ef4444" value="Taxes" {% if expense.category == "Taxes" %}selected{% endif %}>Taxes</option>
+          <option data-icon="fas fa-bus" data-color="#6b7280" value="Transportation" {% if expense.category == "Transportation" %}selected{% endif %}>Transportation</option>
+          <option data-icon="fas fa-plane" data-color="#3b82f6" value="Travel" {% if expense.category == "Travel" %}selected{% endif %}>Travel</option>
+          <option data-icon="fas fa-lightbulb" data-color="#f59e0b" value="Utilities" {% if expense.category == "Utilities" %}selected{% endif %}>Utilities</option>
+          <option data-icon="fas fa-umbrella-beach" data-color="#f59e0b" value="Vacation" {% if expense.category == "Vacation" %}selected{% endif %}>Vacation</option>
+          <option data-icon="fas fa-blender" data-color="#64748b" value="Appliances" {% if expense.category == "Appliances" %}selected{% endif %}>Appliances</option>
+          <option data-icon="fas fa-piggy-bank" data-color="#84cc16" value="Savings" {% if expense.category == "Savings" %}selected{% endif %}>Savings</option>
+          <option data-icon="fas fa-money-bill-wave" data-color="#16a34a" value="Salary" {% if expense.category == "Salary" %}selected{% endif %}>Salary</option>
+        </select>
+      </div>
+
+      <!-- Done By -->
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+          Done By <span class="text-red-400">*</span>
+        </label>
+        <select name="done_by" required
+                class="w-full h-12 border border-gray-300 dark:border-gray-600
+                       bg-white dark:bg-[#222] text-gray-900 dark:text-gray-100
+                       rounded-lg shadow-sm px-4 text-sm
+                       focus:ring-2 focus:ring-[#0f8238] focus:border-[#0f8238] transition">
+          <option value="" disabled>Select Person</option>
+          <option value="Faisal" {% if expense.done_by == "Faisal" %}selected{% endif %}>Faisal</option>
+          <option value="Hassan" {% if expense.done_by == "Hassan" %}selected{% endif %}>Hassan</option>
+          <option value="Faran" {% if expense.done_by == "Faran" %}selected{% endif %}>Faran</option>
+        </select>
+      </div>
+
+      <!-- Note — full width -->
+      <div class="sm:col-span-2">
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+          Note <span class="text-gray-400 font-normal">(optional)</span>
+        </label>
+        <textarea name="note" rows="3" placeholder="What was this expense for?"
+                  class="w-full border border-gray-300 dark:border-gray-600
+                         bg-white dark:bg-[#222] text-gray-900 dark:text-gray-100
+                         rounded-lg shadow-sm px-4 py-3 text-sm
+                         focus:ring-2 focus:ring-[#0f8238] focus:border-[#0f8238] transition
+                         placeholder:text-gray-400 dark:placeholder:text-gray-500 resize-none">{{ expense.note or '' }}</textarea>
+      </div>
+
+      <!-- Receipt — full width -->
+      <div class="sm:col-span-2">
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+          Receipt <span class="text-gray-400 font-normal">(optional)</span>
+        </label>
+
+        {% if expense.attachment %}
+        <div class="flex items-center gap-3 mb-3 p-3 bg-gray-50 dark:bg-[#222] rounded-lg border border-gray-200 dark:border-gray-600">
+          <i class="fas fa-paperclip text-gray-400"></i>
+          <a href="{{ url_for('receipt_file', filename=expense.attachment) }}"
+             target="_blank"
+             class="text-sm text-[#0f8238] dark:text-[#5bd68d] hover:underline truncate">
+            {{ expense.attachment }}
+          </a>
+          <span class="text-xs text-gray-400 dark:text-gray-500 ml-auto shrink-0">Current file</span>
+        </div>
+        {% endif %}
+
+        <div class="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-4
+                    hover:border-gray-400 dark:hover:border-gray-500 transition text-center">
+          <input type="file" name="attachment" id="receiptInput"
+                 class="hidden" accept=".pdf,.png,.jpg,.jpeg,.doc">
+          <label for="receiptInput" class="cursor-pointer">
+            <i class="fas fa-cloud-upload-alt text-2xl text-gray-400 dark:text-gray-500 mb-2"></i>
+            <p class="text-sm text-gray-500 dark:text-gray-400">
+              {% if expense.attachment %}
+                Click to replace receipt
+              {% else %}
+                Click to upload or drag & drop
+              {% endif %}
+            </p>
+            <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">PDF, PNG, JPG accepted</p>
+          </label>
+          <p id="fileName" class="text-sm text-[#0f8238] dark:text-[#5bd68d] mt-2 hidden"></p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Actions -->
+    <div class="flex items-center gap-3 mt-6 pt-5 border-t border-gray-100 dark:border-gray-700/50">
+      <button type="submit"
+              class="flex-1 h-12 bg-[#0f8238] hover:bg-green-700 text-white font-medium
+                     rounded-lg shadow-sm transition text-sm">
+        <i class="fas fa-save mr-2"></i>Save Changes
+      </button>
+      <a href="{{ url_for('expenses.index') }}"
+         class="h-12 px-6 border border-gray-300 dark:border-gray-600 rounded-lg
+                text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-[#222]
+                flex items-center justify-center text-sm transition">
+        Cancel
+      </a>
+    </div>
+
+  </form>
+
+</div>
+
+<script>
+  // File name display
+  document.getElementById('receiptInput')?.addEventListener('change', function() {
+    const label = document.getElementById('fileName');
+    if (this.files.length) {
+      label.textContent = this.files[0].name;
+      label.classList.remove('hidden');
+    }
+  });
+
+  // Select2
+  function formatOption(state){
+    if(!state.id) return state.text;
+    const $el=$(state.element);
+    const icon=$el.data('icon');
+    const color=$el.data('color')||'#6b7280';
+    return $(`<span class="opt"><i class="${icon} fa-fw ico" style="color:${color}"></i><span>${state.text}</span></span>`);
+  }
+  $(document).ready(function() {
+    $('#editCategory').select2({
+      width: '100%',
+      templateResult: formatOption,
+      templateSelection: formatOption,
+      escapeMarkup: m=>m
+    });
+  });
+</script>
+
+{% endblock %}

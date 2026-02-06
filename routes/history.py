@@ -3,12 +3,14 @@ from auth_utils import login_required
 
 history_bp = Blueprint('history', __name__, url_prefix='/history')
 
+
 @history_bp.route('/')
 @login_required
 def index():
     conn = current_app.db_pool.get_connection()
     try:
         with conn.cursor(dictionary=True) as cur:
+            # Get all archived months
             cur.execute("""
                 SELECT month FROM archived_income WHERE user_id=%s
                 UNION
@@ -18,13 +20,17 @@ def index():
             months = [row['month'] for row in cur.fetchall()]
 
             selected_month = request.args.get('month') or (months[0] if months else None)
+            category_filter = request.args.get('category', '')
 
             archived_income = []
             archived_expenses = []
             total_income_month = 0.0
             total_expense_month = 0.0
+            category_breakdown = {}
+            expense_categories = []
 
             if selected_month:
+                # Income
                 cur.execute(
                     "SELECT id, source, amount FROM archived_income WHERE month=%s AND user_id=%s",
                     (selected_month, session['user_id'])
@@ -35,10 +41,21 @@ def index():
                 ]
                 total_income_month = sum(i["amount"] for i in archived_income)
 
-                cur.execute(
-                    "SELECT id, amount, category, note, date FROM archived_expense WHERE month=%s AND user_id=%s",
-                    (selected_month, session['user_id'])
-                )
+                # Expenses
+                expense_query = """
+                    SELECT id, amount, category, note, date
+                    FROM archived_expense
+                    WHERE month=%s AND user_id=%s
+                """
+                expense_params = [selected_month, session['user_id']]
+
+                if category_filter:
+                    expense_query += " AND category=%s"
+                    expense_params.append(category_filter)
+
+                expense_query += " ORDER BY date DESC"
+                cur.execute(expense_query, tuple(expense_params))
+
                 archived_expenses = [
                     {
                         "id": r['id'],
@@ -49,7 +66,30 @@ def index():
                     }
                     for r in cur.fetchall()
                 ]
-                total_expense_month = sum(e["amount"] for e in archived_expenses)
+
+                # Total expenses (unfiltered for summary)
+                cur.execute(
+                    "SELECT COALESCE(SUM(amount),0) AS total FROM archived_expense WHERE month=%s AND user_id=%s",
+                    (selected_month, session['user_id'])
+                )
+                total_expense_month = float(cur.fetchone()['total'])
+
+                # Category breakdown
+                cur.execute("""
+                    SELECT category, SUM(amount) AS total, COUNT(*) AS count
+                    FROM archived_expense
+                    WHERE month=%s AND user_id=%s
+                    GROUP BY category
+                    ORDER BY total DESC
+                """, (selected_month, session['user_id']))
+                category_breakdown = {
+                    r['category']: {"total": float(r['total']), "count": int(r['count'])}
+                    for r in cur.fetchall()
+                }
+                expense_categories = list(category_breakdown.keys())
+
+        net_savings = total_income_month - total_expense_month
+        savings_rate = (net_savings / total_income_month * 100) if total_income_month else 0
 
         return render_template(
             "history.html",
@@ -59,6 +99,11 @@ def index():
             expenses=archived_expenses,
             total_income_month=total_income_month,
             total_expense_month=total_expense_month,
+            net_savings=net_savings,
+            savings_rate=savings_rate,
+            category_breakdown=category_breakdown,
+            expense_categories=expense_categories,
+            category_filter=category_filter,
         )
     finally:
         conn.close()
@@ -111,7 +156,30 @@ def compare():
 
             comparison = None
 
+            # All-months trend data
+            trend = []
+            if months:
+                for month in reversed(months):
+                    cur.execute(
+                        "SELECT COALESCE(SUM(amount),0) AS total FROM archived_income WHERE user_id=%s AND month=%s",
+                        (session['user_id'], month)
+                    )
+                    inc = float(cur.fetchone()['total'])
+                    cur.execute(
+                        "SELECT COALESCE(SUM(amount),0) AS total FROM archived_expense WHERE user_id=%s AND month=%s",
+                        (session['user_id'], month)
+                    )
+                    exp = float(cur.fetchone()['total'])
+                    trend.append({
+                        "month": month,
+                        "income": inc,
+                        "expense": exp,
+                        "net": inc - exp,
+                        "savings_rate": round((inc - exp) / inc * 100, 1) if inc else 0
+                    })
+
             if m1 and m2:
+                # Income totals
                 cur.execute("""
                     SELECT month, COALESCE(SUM(amount),0) AS total
                     FROM archived_income
@@ -120,6 +188,7 @@ def compare():
                 """, (session['user_id'], m1, m2))
                 income = {r['month']: float(r['total']) for r in cur.fetchall()}
 
+                # Expense totals
                 cur.execute("""
                     SELECT month, COALESCE(SUM(amount),0) AS total
                     FROM archived_expense
@@ -128,6 +197,7 @@ def compare():
                 """, (session['user_id'], m1, m2))
                 expense = {r['month']: float(r['total']) for r in cur.fetchall()}
 
+                # Category breakdown
                 cur.execute("""
                     SELECT category, month, SUM(amount) AS total
                     FROM archived_expense
@@ -137,21 +207,42 @@ def compare():
 
                 cat_raw = cur.fetchall()
                 categories = {}
-
                 for r in cat_raw:
                     categories.setdefault(r['category'], {})
                     categories[r['category']][r['month']] = float(r['total'])
+
+                # Income source breakdown
+                cur.execute("""
+                    SELECT source, month, SUM(amount) AS total
+                    FROM archived_income
+                    WHERE user_id=%s AND month IN (%s,%s)
+                    GROUP BY source, month
+                """, (session['user_id'], m1, m2))
+                src_raw = cur.fetchall()
+                income_sources = {}
+                for r in src_raw:
+                    income_sources.setdefault(r['source'], {})
+                    income_sources[r['source']][r['month']] = float(r['total'])
+
+                i1 = income.get(m1, 0)
+                i2 = income.get(m2, 0)
+                e1 = expense.get(m1, 0)
+                e2 = expense.get(m2, 0)
+                n1 = i1 - e1
+                n2 = i2 - e2
 
                 comparison = {
                     "m1": m1,
                     "m2": m2,
                     "income": income,
                     "expense": expense,
-                    "net": {
-                        m1: income.get(m1, 0) - expense.get(m1, 0),
-                        m2: income.get(m2, 0) - expense.get(m2, 0),
+                    "net": {m1: n1, m2: n2},
+                    "categories": categories,
+                    "income_sources": income_sources,
+                    "savings_rate": {
+                        m1: round(n1 / i1 * 100, 1) if i1 else 0,
+                        m2: round(n2 / i2 * 100, 1) if i2 else 0,
                     },
-                    "categories": categories
                 }
 
         return render_template(
@@ -159,7 +250,8 @@ def compare():
             months=months,
             comparison=comparison,
             m1=m1,
-            m2=m2
+            m2=m2,
+            trend=trend,
         )
 
     finally:

@@ -1,45 +1,59 @@
 {% extends "base.html" %}
 {% block content %}
 
-<h2 class="text-xl font-bold mb-6 text-[#0f8238] dark:text-[#5bd68d]">
-  Compare Months
-</h2>
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+  <h2 class="text-xl font-bold text-[#0f8238] dark:text-[#5bd68d]">
+    <i class="fas fa-exchange-alt mr-2"></i>Compare Months
+  </h2>
+  <a href="{{ url_for('history.index') }}"
+     class="text-sm text-gray-500 dark:text-gray-400 hover:text-[#0f8238] dark:hover:text-[#5bd68d] transition">
+    <i class="fas fa-arrow-left mr-1"></i> Back to History
+  </a>
+</div>
 
-<form method="GET" class="grid grid-cols-1 sm:grid-cols-12 gap-4 mb-10">
+<!-- Month Selector -->
+<form method="GET"
+      class="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700
+             rounded-lg p-4 shadow-sm mb-8 transition">
+  <div class="grid grid-cols-1 sm:grid-cols-12 gap-4 items-end">
+    <div class="sm:col-span-5">
+      <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wide">Month A</label>
+      <select name="m1"
+        class="w-full h-11 bg-white dark:bg-[#222] text-gray-800 dark:text-gray-200
+               border border-gray-300 dark:border-gray-600 rounded-lg px-4
+               focus:outline-none focus:ring-2 focus:ring-[#0f8238] transition text-sm">
+        {% for m in months %}
+          <option value="{{ m }}" {% if m == m1 %}selected{% endif %}>{{ m }}</option>
+        {% endfor %}
+      </select>
+    </div>
 
-  <!-- Month A -->
-  <div class="sm:col-span-5">
-    <label class="block text-xs text-gray-400 mb-1">From</label>
-    <select name="m1"
-      class="w-full h-12 bg-[#111] text-white border border-gray-700 rounded-lg px-4
-             focus:outline-none focus:ring-2 focus:ring-[#0f8238] transition">
-      {% for m in months %}
-        <option value="{{ m }}" {% if m == m1 %}selected{% endif %}>{{ m }}</option>
-      {% endfor %}
-    </select>
+    <div class="sm:col-span-5">
+      <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wide">Month B</label>
+      <select name="m2"
+        class="w-full h-11 bg-white dark:bg-[#222] text-gray-800 dark:text-gray-200
+               border border-gray-300 dark:border-gray-600 rounded-lg px-4
+               focus:outline-none focus:ring-2 focus:ring-[#0f8238] transition text-sm">
+        {% for m in months %}
+          <option value="{{ m }}" {% if m == m2 %}selected{% endif %}>{{ m }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="sm:col-span-2">
+      <button class="w-full h-11 bg-[#0f8238] hover:bg-green-700 text-white font-medium rounded-lg transition text-sm">
+        <i class="fas fa-chart-bar mr-1"></i> Compare
+      </button>
+    </div>
   </div>
-
-  <!-- Month B -->
-  <div class="sm:col-span-5">
-    <label class="block text-xs text-gray-400 mb-1">To</label>
-    <select name="m2"
-      class="w-full h-12 bg-[#111] text-white border border-gray-700 rounded-lg px-4
-             focus:outline-none focus:ring-2 focus:ring-[#0f8238] transition">
-      {% for m in months %}
-        <option value="{{ m }}" {% if m == m2 %}selected{% endif %}>{{ m }}</option>
-      {% endfor %}
-    </select>
-  </div>
-
-  <!-- Compare Button -->
-  <div class="sm:col-span-2 flex items-end">
-    <button
-      class="w-full h-12 bg-[#0f8238] hover:bg-green-700 text-white font-medium rounded-lg transition">
-      Compare
-    </button>
-  </div>
-
 </form>
+
+{% if not months %}
+<div class="text-center py-20">
+  <i class="fas fa-archive text-4xl text-gray-300 dark:text-gray-600 mb-4"></i>
+  <p class="text-gray-500 dark:text-gray-400">No archived months to compare yet.</p>
+</div>
+{% endif %}
 
 {% if comparison %}
 
@@ -50,56 +64,130 @@
 {% set e2 = comparison.expense.get(m2, 0) %}
 {% set n1 = comparison.net.get(m1, 0) %}
 {% set n2 = comparison.net.get(m2, 0) %}
+{% set sr1 = comparison.savings_rate.get(m1, 0) %}
+{% set sr2 = comparison.savings_rate.get(m2, 0) %}
 
 {% set ip = ((i2 - i1) / i1 * 100) if i1 else 0 %}
 {% set ep = ((e2 - e1) / e1 * 100) if e1 else 0 %}
 {% set np = ((n2 - n1) / n1 * 100) if n1 else 0 %}
 
-<!-- KPI CARDS -->
-<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+<!-- KPI CARDS — Side-by-side values -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
 
-  <div class="bg-[#1a1a1a] border border-gray-700 rounded-xl p-6 shadow-sm">
-    <p class="text-sm text-gray-400 mb-1">Income</p>
-    <p class="text-2xl font-extrabold text-white">Rs. {{ i2 }}</p>
-    <p class="text-sm {% if ip >= 0 %}text-green-500{% else %}text-red-500{% endif %}">
-      {{ ip | round(1) }}%
-    </p>
+  <!-- Income -->
+  <div class="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700 rounded-lg p-5 shadow-sm transition">
+    <div class="flex items-center justify-between mb-3">
+      <span class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Income</span>
+      <span class="text-xs font-bold px-2 py-0.5 rounded-full
+                   {% if ip >= 0 %}bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400
+                   {% else %}bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400{% endif %}">
+        {% if ip >= 0 %}+{% endif %}{{ ip | round(1) }}%
+      </span>
+    </div>
+    <div class="grid grid-cols-2 gap-3">
+      <div>
+        <p class="text-[10px] text-gray-400 dark:text-gray-500 uppercase mb-0.5">{{ m1 }}</p>
+        <p class="text-lg font-bold text-[#1e90ff] dark:text-[#70b7ff]">Rs. {{ i1 | round(0) | int }}</p>
+      </div>
+      <div>
+        <p class="text-[10px] text-gray-400 dark:text-gray-500 uppercase mb-0.5">{{ m2 }}</p>
+        <p class="text-lg font-bold text-[#1e90ff] dark:text-[#70b7ff]">Rs. {{ i2 | round(0) | int }}</p>
+      </div>
+    </div>
   </div>
 
-  <div class="bg-[#1a1a1a] border border-gray-700 rounded-xl p-6 shadow-sm">
-    <p class="text-sm text-gray-400 mb-1">Expenses</p>
-    <p class="text-2xl font-extrabold text-white">Rs. {{ e2 }}</p>
-    <p class="text-sm {% if ep <= 0 %}text-green-500{% else %}text-red-500{% endif %}">
-      {{ ep | round(1) }}%
-    </p>
+  <!-- Expenses -->
+  <div class="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700 rounded-lg p-5 shadow-sm transition">
+    <div class="flex items-center justify-between mb-3">
+      <span class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Expenses</span>
+      <span class="text-xs font-bold px-2 py-0.5 rounded-full
+                   {% if ep <= 0 %}bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400
+                   {% else %}bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400{% endif %}">
+        {% if ep >= 0 %}+{% endif %}{{ ep | round(1) }}%
+      </span>
+    </div>
+    <div class="grid grid-cols-2 gap-3">
+      <div>
+        <p class="text-[10px] text-gray-400 dark:text-gray-500 uppercase mb-0.5">{{ m1 }}</p>
+        <p class="text-lg font-bold text-[#f3703f] dark:text-[#ff9966]">Rs. {{ e1 | round(0) | int }}</p>
+      </div>
+      <div>
+        <p class="text-[10px] text-gray-400 dark:text-gray-500 uppercase mb-0.5">{{ m2 }}</p>
+        <p class="text-lg font-bold text-[#f3703f] dark:text-[#ff9966]">Rs. {{ e2 | round(0) | int }}</p>
+      </div>
+    </div>
   </div>
 
-  <div class="bg-[#1a1a1a] border border-gray-700 rounded-xl p-6 shadow-sm">
-    <p class="text-sm text-gray-400 mb-1">Net Savings</p>
-    <p class="text-2xl font-extrabold text-white">Rs. {{ n2 }}</p>
-    <p class="text-sm {% if np >= 0 %}text-green-500{% else %}text-red-500{% endif %}">
-      {{ np | round(1) }}%
-    </p>
+  <!-- Net Savings -->
+  <div class="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700 rounded-lg p-5 shadow-sm transition">
+    <div class="flex items-center justify-between mb-3">
+      <span class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Net Savings</span>
+      <span class="text-xs font-bold px-2 py-0.5 rounded-full
+                   {% if np >= 0 %}bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400
+                   {% else %}bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400{% endif %}">
+        {% if np >= 0 %}+{% endif %}{{ np | round(1) }}%
+      </span>
+    </div>
+    <div class="grid grid-cols-2 gap-3">
+      <div>
+        <p class="text-[10px] text-gray-400 dark:text-gray-500 uppercase mb-0.5">{{ m1 }}</p>
+        <p class="text-lg font-bold {% if n1 >= 0 %}text-[#0f8238] dark:text-[#5bd68d]{% else %}text-red-500{% endif %}">
+          Rs. {{ n1 | round(0) | int }}
+        </p>
+      </div>
+      <div>
+        <p class="text-[10px] text-gray-400 dark:text-gray-500 uppercase mb-0.5">{{ m2 }}</p>
+        <p class="text-lg font-bold {% if n2 >= 0 %}text-[#0f8238] dark:text-[#5bd68d]{% else %}text-red-500{% endif %}">
+          Rs. {{ n2 | round(0) | int }}
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Savings Rate -->
+  <div class="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700 rounded-lg p-5 shadow-sm transition">
+    <div class="flex items-center justify-between mb-3">
+      <span class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Savings Rate</span>
+      <i class="fas fa-percentage text-[#6466f1] dark:text-[#8f90ff]"></i>
+    </div>
+    <div class="grid grid-cols-2 gap-3">
+      <div>
+        <p class="text-[10px] text-gray-400 dark:text-gray-500 uppercase mb-0.5">{{ m1 }}</p>
+        <p class="text-lg font-bold text-[#6466f1] dark:text-[#8f90ff]">{{ sr1 }}%</p>
+      </div>
+      <div>
+        <p class="text-[10px] text-gray-400 dark:text-gray-500 uppercase mb-0.5">{{ m2 }}</p>
+        <p class="text-lg font-bold text-[#6466f1] dark:text-[#8f90ff]">{{ sr2 }}%</p>
+      </div>
+    </div>
   </div>
 
 </div>
 
-<!-- CHART -->
-<div class="bg-[#1a1a1a] border border-gray-700 rounded-xl p-6 mb-10 shadow-sm">
-  <div class="flex justify-between items-center mb-4">
-    <h3 class="font-semibold text-gray-200">Income vs Expenses</h3>
-    <button onclick="toggleChartType()"
-            class="text-sm px-3 py-1 border border-gray-600 rounded hover:bg-[#222]">
-      Toggle Bar / Line
-    </button>
+<!-- CHARTS ROW -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+
+  <!-- Income vs Expenses grouped bar -->
+  <div class="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700
+              rounded-lg p-5 shadow-sm transition">
+    <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">Income vs Expenses</h3>
+    <div class="h-[260px]">
+      <canvas id="compareChart"></canvas>
+    </div>
   </div>
 
-  <div class="h-[280px]">
-    <canvas id="compareChart"></canvas>
+  <!-- Category comparison bar chart -->
+  <div class="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700
+              rounded-lg p-5 shadow-sm transition">
+    <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">Category Comparison</h3>
+    <div class="h-[260px]">
+      <canvas id="catCompareChart"></canvas>
+    </div>
   </div>
+
 </div>
 
-{# ---- CATEGORY DELTAS (SAFE) ---- #}
+{# ---- CATEGORY DELTAS ---- #}
 {% set deltas = {} %}
 {% for cat, vals in comparison.categories.items() %}
   {% set v1 = vals.get(m1, 0) %}
@@ -107,96 +195,289 @@
   {% set _ = deltas.update({cat: v2 - v1}) %}
 {% endfor %}
 
-{% set worst = deltas | dictsort(by='value') | last %}
-{% set best = deltas | dictsort(by='value') | first %}
+{% if deltas %}
+{% set sorted_deltas = deltas | dictsort(by='value') %}
+{% set best = sorted_deltas | first %}
+{% set worst = sorted_deltas | last %}
 
-<div class="flex flex-wrap gap-4 mb-4 text-sm">
-  <span class="px-3 py-1 rounded bg-red-900/30 text-red-400">
-    ↑ Highest Increase: {{ worst[0] }} (Rs. {{ worst[1] }})
+<!-- Insight Badges -->
+<div class="flex flex-wrap gap-3 mb-4">
+  {% if worst[1] > 0 %}
+  <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm
+               bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800/30">
+    <i class="fas fa-arrow-up text-xs"></i>
+    Highest increase: <strong>{{ worst[0] }}</strong> (+Rs. {{ worst[1] | round(0) | int }})
   </span>
-  <span class="px-3 py-1 rounded bg-green-900/30 text-green-400">
-    ↓ Biggest Saving: {{ best[0] }} (Rs. {{ best[1] }})
+  {% endif %}
+  {% if best[1] < 0 %}
+  <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm
+               bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 border border-green-200 dark:border-green-800/30">
+    <i class="fas fa-arrow-down text-xs"></i>
+    Biggest saving: <strong>{{ best[0] }}</strong> (Rs. {{ best[1] | round(0) | int }})
   </span>
+  {% endif %}
 </div>
+{% endif %}
 
 <!-- CATEGORY TABLE -->
-<div class="bg-[#1a1a1a] border border-gray-700 rounded-xl p-6 shadow-sm">
-  <h3 class="font-semibold mb-4 text-gray-200">Category Comparison</h3>
+<div class="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700
+            rounded-lg p-5 shadow-sm mb-8 transition">
+  <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">Category Breakdown</h3>
 
-  <table class="w-full text-sm">
-    <thead class="border-b border-gray-700 text-gray-400">
-      <tr>
-        <th class="py-2 text-left">Category</th>
-        <th class="py-2 text-right">{{ m1 }}</th>
-        <th class="py-2 text-right">{{ m2 }}</th>
-        <th class="py-2 text-right">Δ</th>
-        <th class="py-2 text-right">%</th>
-      </tr>
-    </thead>
+  <div class="overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead class="border-b border-gray-200 dark:border-gray-700 text-xs uppercase text-gray-500 dark:text-gray-400">
+        <tr>
+          <th class="py-2.5 text-left">Category</th>
+          <th class="py-2.5 text-right">{{ m1 }}</th>
+          <th class="py-2.5 text-right">{{ m2 }}</th>
+          <th class="py-2.5 text-right">Change</th>
+          <th class="py-2.5 text-right">%</th>
+        </tr>
+      </thead>
+      <tbody class="text-gray-700 dark:text-gray-300">
+      {% for cat, vals in comparison.categories.items() %}
+        {% set v1 = vals.get(m1, 0) %}
+        {% set v2 = vals.get(m2, 0) %}
+        {% set d = v2 - v1 %}
+        {% set p = ((d / v1) * 100) if v1 else 0 %}
 
-    <tbody>
-    {% for cat, vals in comparison.categories.items() %}
-      {% set v1 = vals.get(m1, 0) %}
-      {% set v2 = vals.get(m2, 0) %}
-      {% set d = v2 - v1 %}
-      {% set p = ((d / v1) * 100) if v1 else 0 %}
-
-      <tr class="border-t border-gray-700
-                 {% if cat == worst[0] %}bg-red-900/10
-                 {% elif cat == best[0] %}bg-green-900/10{% endif %}">
-        <td class="py-2">{{ cat }}</td>
-        <td class="text-right">Rs. {{ v1 }}</td>
-        <td class="text-right">Rs. {{ v2 }}</td>
-        <td class="text-right {% if d > 0 %}text-red-400{% else %}text-green-400{% endif %}">
-          Rs. {{ d }}
-        </td>
-        <td class="text-right {% if p > 0 %}text-red-400{% else %}text-green-400{% endif %}">
-          {{ p | round(1) }}%
-        </td>
-      </tr>
-    {% endfor %}
-    </tbody>
-  </table>
+        <tr class="border-t border-gray-100 dark:border-gray-700/50
+                   {% if deltas and cat == worst[0] and worst[1] > 0 %}bg-red-50/50 dark:bg-red-900/10
+                   {% elif deltas and cat == best[0] and best[1] < 0 %}bg-green-50/50 dark:bg-green-900/10{% endif %}">
+          <td class="py-2.5 font-medium">{{ cat }}</td>
+          <td class="text-right py-2.5">Rs. {{ v1 | round(0) | int }}</td>
+          <td class="text-right py-2.5">Rs. {{ v2 | round(0) | int }}</td>
+          <td class="text-right py-2.5 font-semibold
+                     {% if d > 0 %}text-red-500 dark:text-red-400{% elif d < 0 %}text-green-500 dark:text-green-400{% else %}text-gray-400{% endif %}">
+            {% if d > 0 %}+{% endif %}Rs. {{ d | round(0) | int }}
+          </td>
+          <td class="text-right py-2.5 text-xs
+                     {% if p > 0 %}text-red-500 dark:text-red-400{% elif p < 0 %}text-green-500 dark:text-green-400{% else %}text-gray-400{% endif %}">
+            {% if p > 0 %}+{% endif %}{{ p | round(1) }}%
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
 </div>
 
+<!-- INCOME SOURCES TABLE -->
+{% if comparison.income_sources %}
+<div class="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700
+            rounded-lg p-5 shadow-sm mb-8 transition">
+  <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">Income Sources</h3>
+
+  <div class="overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead class="border-b border-gray-200 dark:border-gray-700 text-xs uppercase text-gray-500 dark:text-gray-400">
+        <tr>
+          <th class="py-2.5 text-left">Source</th>
+          <th class="py-2.5 text-right">{{ m1 }}</th>
+          <th class="py-2.5 text-right">{{ m2 }}</th>
+          <th class="py-2.5 text-right">Change</th>
+        </tr>
+      </thead>
+      <tbody class="text-gray-700 dark:text-gray-300">
+      {% for src, vals in comparison.income_sources.items() %}
+        {% set v1 = vals.get(m1, 0) %}
+        {% set v2 = vals.get(m2, 0) %}
+        {% set d = v2 - v1 %}
+
+        <tr class="border-t border-gray-100 dark:border-gray-700/50">
+          <td class="py-2.5 font-medium">{{ src }}</td>
+          <td class="text-right py-2.5">{% if v1 %}Rs. {{ v1 | round(0) | int }}{% else %}<span class="text-gray-300 dark:text-gray-600">—</span>{% endif %}</td>
+          <td class="text-right py-2.5">{% if v2 %}Rs. {{ v2 | round(0) | int }}{% else %}<span class="text-gray-300 dark:text-gray-600">—</span>{% endif %}</td>
+          <td class="text-right py-2.5 font-semibold
+                     {% if d > 0 %}text-green-500 dark:text-green-400{% elif d < 0 %}text-red-500 dark:text-red-400{% else %}text-gray-400{% endif %}">
+            {% if d > 0 %}+{% endif %}Rs. {{ d | round(0) | int }}
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+{% endif %}
+
+<!-- MULTI-MONTH TREND (always show if we have data) -->
+{% if trend and trend | length > 1 %}
+<div class="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700
+            rounded-lg p-5 shadow-sm transition">
+  <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">
+    <i class="fas fa-chart-line mr-1"></i> All-Time Trend
+  </h3>
+  <div class="h-[300px]">
+    <canvas id="trendChart"></canvas>
+  </div>
+
+  <!-- Trend summary table -->
+  <div class="overflow-x-auto mt-4">
+    <table class="w-full text-xs">
+      <thead class="border-b border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 uppercase">
+        <tr>
+          <th class="py-2 text-left">Month</th>
+          <th class="py-2 text-right">Income</th>
+          <th class="py-2 text-right">Expenses</th>
+          <th class="py-2 text-right">Net</th>
+          <th class="py-2 text-right">Rate</th>
+        </tr>
+      </thead>
+      <tbody class="text-gray-700 dark:text-gray-300">
+        {% for t in trend | reverse %}
+        <tr class="border-t border-gray-100 dark:border-gray-700/50">
+          <td class="py-1.5 font-medium">{{ t.month }}</td>
+          <td class="py-1.5 text-right">Rs. {{ t.income | round(0) | int }}</td>
+          <td class="py-1.5 text-right">Rs. {{ t.expense | round(0) | int }}</td>
+          <td class="py-1.5 text-right font-semibold
+                     {% if t.net >= 0 %}text-green-500 dark:text-green-400{% else %}text-red-500 dark:text-red-400{% endif %}">
+            Rs. {{ t.net | round(0) | int }}
+          </td>
+          <td class="py-1.5 text-right
+                     {% if t.savings_rate >= 0 %}text-green-500 dark:text-green-400{% else %}text-red-500 dark:text-red-400{% endif %}">
+            {{ t.savings_rate }}%
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+<!-- SCRIPTS -->
+{% if comparison %}
 <script>
-let chartType = 'bar';
-const ctx = document.getElementById('compareChart');
-
-const chartData = {
-  labels: ['{{ m1 }}', '{{ m2 }}'],
-  datasets: [
-    { label: 'Income', data: [{{ i1 }}, {{ i2 }}] },
-    { label: 'Expenses', data: [{{ e1 }}, {{ e2 }}] }
-  ]
-};
-
-let compareChart = new Chart(ctx, {
-  type: chartType,
-  data: chartData,
+// Income vs Expenses chart
+new Chart(document.getElementById('compareChart'), {
+  type: 'bar',
+  data: {
+    labels: ['{{ m1 }}', '{{ m2 }}'],
+    datasets: [
+      {
+        label: 'Income',
+        data: [{{ i1 }}, {{ i2 }}],
+        backgroundColor: 'rgba(30, 144, 255, 0.8)',
+        borderRadius: 6
+      },
+      {
+        label: 'Expenses',
+        data: [{{ e1 }}, {{ e2 }}],
+        backgroundColor: 'rgba(243, 112, 63, 0.8)',
+        borderRadius: 6
+      },
+      {
+        label: 'Net Savings',
+        data: [{{ n1 }}, {{ n2 }}],
+        backgroundColor: 'rgba(15, 130, 56, 0.8)',
+        borderRadius: 6
+      }
+    ]
+  },
   options: {
     responsive: true,
     maintainAspectRatio: false,
-    plugins: { legend: { position: 'bottom' } },
-    scales: { y: { beginAtZero: true } }
+    plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, padding: 10, font: { size: 11 } } } },
+    scales: { y: { beginAtZero: true, grid: { display: false } }, x: { grid: { display: false } } }
   }
 });
 
-function toggleChartType() {
-  compareChart.destroy();
-  chartType = chartType === 'bar' ? 'line' : 'bar';
-  compareChart = new Chart(ctx, {
-    type: chartType,
-    data: chartData,
+// Category comparison chart
+(function() {
+  const cats = {{ comparison.categories.keys() | list | tojson }};
+  const m1Data = cats.map(c => {{ comparison.categories | tojson }}[c]?.['{{ m1 }}'] || 0);
+  const m2Data = cats.map(c => {{ comparison.categories | tojson }}[c]?.['{{ m2 }}'] || 0);
+
+  new Chart(document.getElementById('catCompareChart'), {
+    type: 'bar',
+    data: {
+      labels: cats,
+      datasets: [
+        { label: '{{ m1 }}', data: m1Data, backgroundColor: 'rgba(102, 81, 145, 0.7)', borderRadius: 4 },
+        { label: '{{ m2 }}', data: m2Data, backgroundColor: 'rgba(255, 124, 67, 0.7)', borderRadius: 4 }
+      ]
+    },
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      plugins: { legend: { position: 'bottom' } },
-      scales: { y: { beginAtZero: true } }
+      plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, padding: 10, font: { size: 11 } } } },
+      scales: {
+        y: { beginAtZero: true, grid: { display: false } },
+        x: { grid: { display: false }, ticks: { font: { size: 10 }, maxRotation: 45 } }
+      }
     }
   });
-}
+})();
 </script>
-
 {% endif %}
+
+{% if trend and trend | length > 1 %}
+<script>
+// All-time trend line chart
+(function() {
+  const trend = {{ trend | tojson }};
+  const labels = trend.map(t => t.month);
+  const incomes = trend.map(t => t.income);
+  const expenses = trend.map(t => t.expense);
+  const nets = trend.map(t => t.net);
+
+  new Chart(document.getElementById('trendChart'), {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [
+        {
+          label: 'Income',
+          data: incomes,
+          borderColor: '#1e90ff',
+          backgroundColor: 'rgba(30, 144, 255, 0.1)',
+          fill: true,
+          tension: 0.3,
+          pointRadius: 4,
+          pointHoverRadius: 6
+        },
+        {
+          label: 'Expenses',
+          data: expenses,
+          borderColor: '#f3703f',
+          backgroundColor: 'rgba(243, 112, 63, 0.1)',
+          fill: true,
+          tension: 0.3,
+          pointRadius: 4,
+          pointHoverRadius: 6
+        },
+        {
+          label: 'Net Savings',
+          data: nets,
+          borderColor: '#0f8238',
+          backgroundColor: 'rgba(15, 130, 56, 0.1)',
+          fill: true,
+          tension: 0.3,
+          pointRadius: 4,
+          pointHoverRadius: 6,
+          borderDash: [5, 5]
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { position: 'bottom', labels: { boxWidth: 12, padding: 10, font: { size: 11 } } },
+        tooltip: { mode: 'index', intersect: false }
+      },
+      scales: {
+        y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' } },
+        x: { grid: { display: false }, ticks: { font: { size: 10 } } }
+      }
+    }
+  });
+})();
+</script>
+{% endif %}
+
 {% endblock %}

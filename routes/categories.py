@@ -25,7 +25,7 @@ def index():
     return render_template('categories.html', categories=rows)
 
 
-@categories_bp.route('/delete/<int:id>')
+@categories_bp.route('/delete/<int:id>', methods=['POST'])
 @login_required
 def delete(id):
     conn = current_app.db_pool.get_connection()

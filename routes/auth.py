@@ -1,4 +1,5 @@
 import os
+import re
 from flask import Blueprint, render_template, request, redirect, url_for, current_app, session, flash
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
@@ -7,6 +8,7 @@ from auth_utils import login_required
 auth_bp = Blueprint('auth', __name__, url_prefix='/auth')
 
 ALLOWED_AVATAR_EXT = {'png', 'jpg', 'jpeg'}
+MIN_PASSWORD_LENGTH = 8
 
 def allowed_avatar(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_AVATAR_EXT
@@ -14,12 +16,25 @@ def allowed_avatar(filename):
 @auth_bp.route('/signup', methods=['GET', 'POST'])
 def signup():
     if request.method == 'POST':
-        name = request.form['name'].strip()
-        email = request.form['email'].strip().lower()
-        password = request.form['password']
+        name = request.form.get('name', '').strip()
+        email = request.form.get('email', '').strip().lower()
+        password = request.form.get('password', '')
 
         if not name or not email or not password:
-            return "All fields required", 400
+            flash("All fields are required.", "error")
+            return redirect(url_for('auth.signup'))
+
+        if len(name) > 100:
+            flash("Name must be 100 characters or less.", "error")
+            return redirect(url_for('auth.signup'))
+
+        if not re.match(r'^[^@\s]+@[^@\s]+\.[^@\s]+$', email) or len(email) > 150:
+            flash("Please enter a valid email address.", "error")
+            return redirect(url_for('auth.signup'))
+
+        if len(password) < MIN_PASSWORD_LENGTH:
+            flash(f"Password must be at least {MIN_PASSWORD_LENGTH} characters.", "error")
+            return redirect(url_for('auth.signup'))
 
         conn = current_app.db_pool.get_connection()
         try:

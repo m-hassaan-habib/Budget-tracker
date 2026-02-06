@@ -10,6 +10,7 @@
     </h2>
 
     <form method="POST" class="space-y-5">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <div>
         <label class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">Name</label>
         <input type="text" name="name"

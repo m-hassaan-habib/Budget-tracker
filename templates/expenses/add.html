@@ -1,0 +1,228 @@
+{% extends "base.html" %}
+
+<style>
+.select2-results__option .opt { display:flex; align-items:center; gap:8px }
+.select2-results__option .ico { width:22px; min-width:22px; text-align:center; font-size:16px; line-height:1 }
+.select2-container--default .select2-selection__rendered .opt { display:flex; align-items:center; gap:8px }
+.select2-container--default .select2-selection--single .select2-selection__rendered .ico {
+  width:18px; min-width:18px; text-align:center; font-size:14px; line-height:1;
+}
+</style>
+
+{% block content %}
+
+<div class="max-w-2xl mx-auto">
+
+  <!-- Header -->
+  <div class="flex items-center gap-3 mb-6">
+    <a href="{{ url_for('expenses.index') }}"
+       class="w-9 h-9 rounded-lg border border-gray-200 dark:border-gray-700 flex items-center justify-center
+              text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600 transition">
+      <i class="fas fa-arrow-left fa-sm"></i>
+    </a>
+    <div>
+      <h2 class="text-xl font-bold text-gray-900 dark:text-gray-100">Add Expense</h2>
+      <p class="text-sm text-gray-500 dark:text-gray-400">Record a new expense</p>
+    </div>
+  </div>
+
+  <!-- Form -->
+  <form method="POST" action="{{ url_for('expenses.add_expense') }}"
+        enctype="multipart/form-data"
+        class="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700
+               rounded-xl shadow-sm p-6 transition">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+
+      <!-- Amount -->
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+          Amount (Rs) <span class="text-red-400">*</span>
+        </label>
+        <input type="number" name="amount" step="0.01" required autofocus min="0"
+               placeholder="0.00"
+               class="w-full h-12 border border-gray-300 dark:border-gray-600
+                      bg-white dark:bg-[#222] text-gray-900 dark:text-gray-100
+                      rounded-lg shadow-sm px-4 text-sm
+                      focus:ring-2 focus:ring-[#0f8238] focus:border-[#0f8238] transition
+                      placeholder:text-gray-400 dark:placeholder:text-gray-500">
+      </div>
+
+      <!-- Date -->
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+          Date <span class="text-red-400">*</span>
+        </label>
+        <input type="date" name="date" value="{{ current_date }}" required
+               class="w-full h-12 border border-gray-300 dark:border-gray-600
+                      bg-white dark:bg-[#222] text-gray-900 dark:text-gray-100
+                      rounded-lg shadow-sm px-4 text-sm
+                      focus:ring-2 focus:ring-[#0f8238] focus:border-[#0f8238] transition">
+      </div>
+
+      <!-- Category -->
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+          Category <span class="text-red-400">*</span>
+        </label>
+        <select id="addCategory" name="category" class="select2 w-full" required>
+          <option disabled selected value="">Select Category</option>
+          <option data-icon="fas fa-gem" data-color="#8b5cf6" value="Acessories">Accessories</option>
+          <option data-icon="fas fa-baby-carriage" data-color="#fbbf24" value="Baby Food">Baby Food</option>
+          <option data-icon="fas fa-bread-slice" data-color="#f59e0b" value="Bakery">Bakery</option>
+          <option data-icon="fas fa-file-invoice-dollar" data-color="#ef4444" value="Bills">Bills</option>
+          <option data-icon="fas fa-hand-holding-heart" data-color="#ef4444" value="Charity">Charity</option>
+          <option data-icon="fas fa-broom" data-color="#a3a3a3" value="Cleaning">Cleaning</option>
+          <option data-icon="fas fa-tshirt" data-color="#3b82f6" value="Clothing">Clothing</option>
+          <option data-icon="fas fa-cloud" data-color="#60a5fa" value="Cloud">Cloud</option>
+          <option data-icon="fas fa-mug-hot" data-color="#a16207" value="Coffee/Tea">Coffee/Tea</option>
+          <option data-icon="fas fa-shipping-fast" data-color="#8b5cf6" value="Courier/Shipping">Courier/Shipping</option>
+          <option data-icon="fas fa-globe" data-color="#10b981" value="Domain">Domain</option>
+          <option data-icon="fas fa-utensils" data-color="#10b981" value="Eat Out">Eat Out</option>
+          <option data-icon="fas fa-book" data-color="#0ea5e9" value="Education">Education</option>
+          <option data-icon="fas fa-laptop" data-color="#0284c7" value="Electronics">Electronics</option>
+          <option data-icon="fas fa-film" data-color="#f472b6" value="Entertainment">Entertainment</option>
+          <option data-icon="fas fa-gift" data-color="#f59e0b" value="Family Gift">Family Gift</option>
+          <option data-icon="fas fa-dumbbell" data-color="#10b981" value="Fitness">Fitness</option>
+          <option data-icon="fas fa-motorcycle" data-color="#f97316" value="Food Delivery">Food Delivery</option>
+          <option data-icon="fas fa-apple-alt" data-color="#22c55e" value="Fruits & Veg">Fruits & Veg</option>
+          <option data-icon="fas fa-gas-pump" data-color="#f59e0b" value="Fuel">Fuel</option>
+          <option data-icon="fas fa-couch" data-color="#a16207" value="Furniture">Furniture</option>
+          <option data-icon="fas fa-seedling" data-color="#16a34a" value="Gardening">Gardening</option>
+          <option data-icon="fas fa-shopping-cart" data-color="#22c55e" value="Grocery">Grocery</option>
+          <option data-icon="fas fa-heartbeat" data-color="#ef4444" value="Healthcare">Healthcare</option>
+          <option data-icon="fas fa-hammer" data-color="#f59e0b" value="Home Improvement">Home Improvement</option>
+          <option data-icon="fas fa-server" data-color="#4b5563" value="Hosting">Hosting</option>
+          <option data-icon="fas fa-home" data-color="#64748b" value="Household Expense">Household Expense</option>
+          <option data-icon="fas fa-shield-alt" data-color="#0ea5e9" value="Insurance">Insurance</option>
+          <option data-icon="fas fa-wifi" data-color="#6366f1" value="Internet">Internet</option>
+          <option data-icon="fas fa-chart-line" data-color="#0ea5e9" value="Investment">Investment</option>
+          <option data-icon="fas fa-tint" data-color="#06b6d4" value="Laundry">Laundry</option>
+          <option data-icon="fas fa-hand-holding-usd" data-color="#22c55e" value="Lend Money">Lend Money</option>
+          <option data-icon="fas fa-credit-card" data-color="#ef4444" value="Loan Payment">Loan Payment</option>
+          <option data-icon="fas fa-drumstick-bite" data-color="#ef4444" value="Meat & Poultry">Meat & Poultry</option>
+          <option data-icon="fas fa-ellipsis-h" data-color="#9ca3af" value="Miscellaneous">Miscellaneous</option>
+          <option data-icon="fas fa-sim-card" data-color="#06b6d4" value="Mobile Top-up">Mobile Top-up</option>
+          <option data-icon="fas fa-tree" data-color="#16a34a" value="Outdoor">Outdoor</option>
+          <option data-icon="fas fa-parking" data-color="#3b82f6" value="Parking">Parking</option>
+          <option data-icon="fas fa-paw" data-color="#84cc16" value="Pets">Pets</option>
+          <option data-icon="fas fa-pills" data-color="#22c55e" value="Pharmacy">Pharmacy</option>
+          <option data-icon="fas fa-mobile-alt" data-color="#06b6d4" value="Phone">Phone</option>
+          <option data-icon="fas fa-home" data-color="#4b5563" value="Rent">Rent</option>
+          <option data-icon="fas fa-tools" data-color="#9ca3af" value="Repair">Repair</option>
+          <option data-icon="fas fa-taxi" data-color="#f59e0b" value="Ride-hailing">Ride-hailing</option>
+          <option data-icon="fas fa-shopping-bag" data-color="#8b5cf6" value="Shopping">Shopping</option>
+          <option data-icon="fas fa-cookie-bite" data-color="#f59e0b" value="Snacking">Snacking</option>
+          <option data-icon="fas fa-code" data-color="#0ea5e9" value="Software">Software</option>
+          <option data-icon="fas fa-pen" data-color="#6b7280" value="Stationery">Stationery</option>
+          <option data-icon="fas fa-redo-alt" data-color="#6366f1" value="Subscriptions">Subscriptions</option>
+          <option data-icon="fas fa-file-invoice" data-color="#ef4444" value="Taxes">Taxes</option>
+          <option data-icon="fas fa-bus" data-color="#6b7280" value="Transportation">Transportation</option>
+          <option data-icon="fas fa-plane" data-color="#3b82f6" value="Travel">Travel</option>
+          <option data-icon="fas fa-lightbulb" data-color="#f59e0b" value="Utilities">Utilities</option>
+          <option data-icon="fas fa-umbrella-beach" data-color="#f59e0b" value="Vacation">Vacation</option>
+          <option data-icon="fas fa-blender" data-color="#64748b" value="Appliances">Appliances</option>
+          <option data-icon="fas fa-piggy-bank" data-color="#84cc16" value="Savings">Savings</option>
+          <option data-icon="fas fa-money-bill-wave" data-color="#16a34a" value="Salary">Salary</option>
+        </select>
+      </div>
+
+      <!-- Done By -->
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+          Done By <span class="text-red-400">*</span>
+        </label>
+        <select name="done_by" required
+                class="w-full h-12 border border-gray-300 dark:border-gray-600
+                       bg-white dark:bg-[#222] text-gray-900 dark:text-gray-100
+                       rounded-lg shadow-sm px-4 text-sm
+                       focus:ring-2 focus:ring-[#0f8238] focus:border-[#0f8238] transition">
+          <option value="" disabled {% if not default_done_by %}selected{% endif %}>Select Person</option>
+          <option value="Faisal" {% if default_done_by == "Faisal" %}selected{% endif %}>Faisal</option>
+          <option value="Hassan" {% if default_done_by == "Hassan" %}selected{% endif %}>Hassan</option>
+          <option value="Faran" {% if default_done_by == "Faran" %}selected{% endif %}>Faran</option>
+        </select>
+      </div>
+
+      <!-- Note — full width -->
+      <div class="sm:col-span-2">
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+          Note <span class="text-gray-400 font-normal">(optional)</span>
+        </label>
+        <textarea name="note" rows="3" placeholder="What was this expense for?"
+                  class="w-full border border-gray-300 dark:border-gray-600
+                         bg-white dark:bg-[#222] text-gray-900 dark:text-gray-100
+                         rounded-lg shadow-sm px-4 py-3 text-sm
+                         focus:ring-2 focus:ring-[#0f8238] focus:border-[#0f8238] transition
+                         placeholder:text-gray-400 dark:placeholder:text-gray-500 resize-none"></textarea>
+      </div>
+
+      <!-- Receipt — full width -->
+      <div class="sm:col-span-2">
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+          Receipt <span class="text-gray-400 font-normal">(optional)</span>
+        </label>
+        <div class="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-4
+                    hover:border-gray-400 dark:hover:border-gray-500 transition text-center">
+          <input type="file" name="attachment" id="receiptInput"
+                 class="hidden" accept=".pdf,.png,.jpg,.jpeg,.doc">
+          <label for="receiptInput" class="cursor-pointer">
+            <i class="fas fa-cloud-upload-alt text-2xl text-gray-400 dark:text-gray-500 mb-2"></i>
+            <p class="text-sm text-gray-500 dark:text-gray-400">Click to upload or drag & drop</p>
+            <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">PDF, PNG, JPG accepted</p>
+          </label>
+          <p id="fileName" class="text-sm text-[#0f8238] dark:text-[#5bd68d] mt-2 hidden"></p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Actions -->
+    <div class="flex items-center gap-3 mt-6 pt-5 border-t border-gray-100 dark:border-gray-700/50">
+      <button type="submit"
+              class="flex-1 h-12 bg-[#0f8238] hover:bg-green-700 text-white font-medium
+                     rounded-lg shadow-sm transition text-sm">
+        <i class="fas fa-plus mr-2"></i>Add Expense
+      </button>
+      <a href="{{ url_for('expenses.index') }}"
+         class="h-12 px-6 border border-gray-300 dark:border-gray-600 rounded-lg
+                text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-[#222]
+                flex items-center justify-center text-sm transition">
+        Cancel
+      </a>
+    </div>
+
+  </form>
+
+</div>
+
+<script>
+  // File name display
+  document.getElementById('receiptInput')?.addEventListener('change', function() {
+    const label = document.getElementById('fileName');
+    if (this.files.length) {
+      label.textContent = this.files[0].name;
+      label.classList.remove('hidden');
+    }
+  });
+
+  // Select2
+  function formatOption(state){
+    if(!state.id) return state.text;
+    const $el=$(state.element);
+    const icon=$el.data('icon');
+    const color=$el.data('color')||'#6b7280';
+    return $(`<span class="opt"><i class="${icon} fa-fw ico" style="color:${color}"></i><span>${state.text}</span></span>`);
+  }
+  $(document).ready(function() {
+    $('#addCategory').select2({
+      width: '100%',
+      templateResult: formatOption,
+      templateSelection: formatOption,
+      escapeMarkup: m=>m
+    });
+  });
+</script>
+
+{% endblock %}

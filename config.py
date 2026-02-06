@@ -18,7 +18,7 @@ class Config:
     AVATAR_FOLDER = os.path.join(UPLOAD_FOLDER, 'avatars')
     RECEIPT_FOLDER = os.path.join(UPLOAD_FOLDER, 'receipts')
     MAX_CONTENT_LENGTH = 5 * 1024 * 1024
-    ALLOWED_ATTACH_EXT = {"pdf", "png", "jpg", "jpeg", "doc", "JPG"}
+    ALLOWED_ATTACH_EXT = {"pdf", "png", "jpg", "jpeg", "doc"}
 
     @staticmethod
     def init_db(app):

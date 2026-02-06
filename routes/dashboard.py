@@ -77,6 +77,20 @@ def index():
             who_labels = [row['done_by'] for row in who_data]
             who_values = [float(row['total']) for row in who_data]
 
+            # Recent expenses for quick view
+            cur.execute("""
+                SELECT id, amount, category, note, date
+                FROM expense
+                WHERE user_id=%s
+                ORDER BY date DESC, id DESC
+                LIMIT 5
+            """, (session['user_id'],))
+            recent_expenses = cur.fetchall()
+
+            # Expense count
+            cur.execute("SELECT COUNT(*) AS cnt FROM expense WHERE user_id=%s", (session['user_id'],))
+            expense_count = int(cur.fetchone()['cnt'])
+
         return render_template(
             "dashboard.html",
             total_income=total_income,
@@ -92,7 +106,9 @@ def index():
             savings_labels=savings_labels,
             savings_values=savings_values,
             who_labels=who_labels,
-            who_values=who_values
+            who_values=who_values,
+            recent_expenses=recent_expenses,
+            expense_count=expense_count,
         )
     finally:
         conn.close()
