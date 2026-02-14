@@ -4,140 +4,201 @@
 <!-- Header -->
 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
   <div>
-    <h2 class="text-xl font-bold text-[#0f8238] dark:text-[#5bd68d]">Income Streams</h2>
-    <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Manage your monthly income sources</p>
+    <h2 class="text-xl font-bold text-[#0f8238] dark:text-[#5bd68d]">Income Overview</h2>
+    <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Expected vs Actual income tracking</p>
   </div>
 
   <a href="{{ url_for('income.add_income') }}"
      class="bg-[#0f8238] hover:bg-green-700 text-white text-sm px-4 py-2.5 rounded-lg
             flex items-center gap-2 shadow-sm transition font-medium">
-    <i class="fas fa-plus fa-sm"></i> Add Income
+    <i class="fas fa-plus fa-sm"></i> Add Expected Income
   </a>
 </div>
 
-{% if incomes %}
+<!-- Summary Cards -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
 
-<!-- Summary Row -->
-<div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-
+  <!-- Expected Income -->
   <div class="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700
               rounded-lg p-5 shadow-sm transition">
     <div class="flex items-center justify-between mb-2">
-      <span class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Total Income</span>
+      <span class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Expected Income</span>
       <i class="fas fa-money-bill-wave text-[#1e90ff] dark:text-[#70b7ff]"></i>
     </div>
     <p class="text-2xl font-extrabold text-[#1e90ff] dark:text-[#70b7ff]">
-      Rs. {{ total_income | round(2) }}
+      Rs. {{ total_expected_income | round(2) }}
     </p>
     <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">{{ incomes | length }} source{{ 's' if incomes | length != 1 }}</p>
   </div>
 
+  <!-- Actual Income -->
   <div class="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700
               rounded-lg p-5 shadow-sm transition">
     <div class="flex items-center justify-between mb-2">
-      <span class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Highest Source</span>
-      <i class="fas fa-arrow-up text-[#0f8238] dark:text-[#5bd68d]"></i>
+      <span class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Actual Income</span>
+      <i class="fas fa-receipt text-[#0f8238] dark:text-[#5bd68d]"></i>
     </div>
-    <p class="text-lg font-bold text-gray-800 dark:text-gray-200">{{ incomes[0].source }}</p>
-    <p class="text-sm text-[#0f8238] dark:text-[#5bd68d] font-semibold">
-      Rs. {{ incomes[0].amount | round(2) }}
-      <span class="text-xs text-gray-400 dark:text-gray-500 font-normal ml-1">
-        ({{ ((incomes[0].amount / total_income) * 100) | round(1) if total_income else 0 }}%)
-      </span>
+    <p class="text-2xl font-extrabold text-[#0f8238] dark:text-[#5bd68d]">
+      Rs. {{ total_actual_income | round(2) }}
+    </p>
+    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">From {{ actual_income_by_person | length }} contributor{{ 's' if actual_income_by_person | length != 1 }}</p>
+  </div>
+
+  <!-- Variance -->
+  <div class="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700
+              rounded-lg p-5 shadow-sm transition">
+    <div class="flex items-center justify-between mb-2">
+      <span class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Variance</span>
+      <i class="fas fa-balance-scale {% if income_variance >= 0 %}text-[#0f8238] dark:text-[#5bd68d]{% else %}text-red-500{% endif %}"></i>
+    </div>
+    <p class="text-2xl font-extrabold {% if income_variance >= 0 %}text-[#0f8238] dark:text-[#5bd68d]{% else %}text-red-500{% endif %}">
+      Rs. {{ income_variance | round(2) }}
+    </p>
+    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">
+      {% if income_variance > 0 %}Under budget{% elif income_variance < 0 %}Over budget{% else %}On track{% endif %}
     </p>
   </div>
 
+  <!-- Breakdown Chart -->
   <div class="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700
               rounded-lg p-5 shadow-sm transition">
     <span class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Breakdown</span>
+    {% if incomes %}
     <div class="h-[80px] mt-2">
       <canvas id="incomeChart"></canvas>
     </div>
+    {% else %}
+    <p class="text-xs text-gray-400 dark:text-gray-500 mt-4 text-center">No data</p>
+    {% endif %}
   </div>
 
 </div>
 
-<!-- Income Table -->
-<div class="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700
-            rounded-lg shadow-sm transition overflow-hidden">
+<!-- Two-column layout: Expected Income & Actual Income -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-  <table class="w-full text-sm text-left">
-    <thead class="bg-gray-50 dark:bg-[#222] text-xs uppercase text-gray-500 dark:text-gray-400">
-      <tr>
-        <th class="px-5 py-3">Source</th>
-        <th class="px-5 py-3 text-right">Amount</th>
-        <th class="px-5 py-3 text-right hidden sm:table-cell">Share</th>
-        <th class="px-5 py-3 text-right">Actions</th>
-      </tr>
-    </thead>
-    <tbody class="text-gray-700 dark:text-gray-200">
-      {% for income in incomes %}
-      {% set share = ((income.amount / total_income) * 100) if total_income else 0 %}
-      <tr class="border-t border-gray-100 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-[#222] transition">
-        <td class="px-5 py-3.5">
-          <div class="font-medium text-gray-900 dark:text-gray-100">{{ income.source }}</div>
-        </td>
-        <td class="px-5 py-3.5 text-right">
-          <span class="font-semibold text-[#1e90ff] dark:text-[#70b7ff]">Rs. {{ income.amount | round(2) }}</span>
-        </td>
-        <td class="px-5 py-3.5 text-right hidden sm:table-cell">
-          <div class="flex items-center justify-end gap-2">
-            <div class="w-16 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-              <div class="h-full bg-[#1e90ff] dark:bg-[#70b7ff] rounded-full" style="width: {{ share }}%;"></div>
+  <!-- Expected Income Section (Editable) -->
+  <div class="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700
+              rounded-lg shadow-sm transition overflow-hidden">
+
+    <div class="px-5 py-4 border-b border-gray-100 dark:border-gray-700/50 flex items-center justify-between">
+      <h3 class="text-base font-semibold text-[#1e90ff] dark:text-[#70b7ff]">
+        <i class="fas fa-edit mr-2"></i>Expected Income
+      </h3>
+      <span class="text-sm font-bold text-[#1e90ff] dark:text-[#70b7ff]">Rs. {{ total_expected_income | round(2) }}</span>
+    </div>
+
+    {% if incomes %}
+    <table class="w-full text-sm text-left">
+      <thead class="bg-gray-50 dark:bg-[#222] text-xs uppercase text-gray-500 dark:text-gray-400">
+        <tr>
+          <th class="px-5 py-3">Source</th>
+          <th class="px-5 py-3 text-right">Amount</th>
+          <th class="px-5 py-3 text-right">Actions</th>
+        </tr>
+      </thead>
+      <tbody class="text-gray-700 dark:text-gray-200">
+        {% for income in incomes %}
+        {% set share = ((income.amount / total_expected_income) * 100) if total_expected_income else 0 %}
+        <tr class="border-t border-gray-100 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-[#222] transition">
+          <td class="px-5 py-3.5">
+            <div class="font-medium text-gray-900 dark:text-gray-100">{{ income.source }}</div>
+            <div class="text-xs text-gray-400 dark:text-gray-500">{{ share | round(1) }}% of total</div>
+          </td>
+          <td class="px-5 py-3.5 text-right">
+            <span class="font-semibold text-[#1e90ff] dark:text-[#70b7ff]">Rs. {{ income.amount | round(2) }}</span>
+          </td>
+          <td class="px-5 py-3.5 text-right">
+            <div class="flex items-center justify-end gap-3">
+              <a href="{{ url_for('income.edit_income', id=income.id) }}"
+                 class="text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition"
+                 title="Edit">
+                <i class="fas fa-pen fa-sm"></i>
+              </a>
+              <form method="POST" action="{{ url_for('income.delete_income', id=income.id) }}"
+                    onsubmit="return confirm('Delete this income source?')"
+                    class="inline">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit"
+                        class="text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition"
+                        title="Delete">
+                  <i class="fas fa-trash fa-sm"></i>
+                </button>
+              </form>
             </div>
-            <span class="text-xs text-gray-500 dark:text-gray-400 w-10 text-right">{{ share | round(1) }}%</span>
-          </div>
-        </td>
-        <td class="px-5 py-3.5 text-right">
-          <div class="flex items-center justify-end gap-3">
-            <a href="{{ url_for('income.edit_income', id=income.id) }}"
-               class="text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition"
-               title="Edit">
-              <i class="fas fa-pen fa-sm"></i>
-            </a>
-            <form method="POST" action="{{ url_for('income.delete_income', id=income.id) }}"
-                  onsubmit="return confirm('Delete this income source?')"
-                  class="inline">
-              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-              <button type="submit"
-                      class="text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition"
-                      title="Delete">
-                <i class="fas fa-trash fa-sm"></i>
-              </button>
-            </form>
-          </div>
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-
-    <tfoot class="border-t-2 border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-[#222]">
-      <tr>
-        <td class="px-5 py-3 font-semibold text-gray-700 dark:text-gray-300">Total</td>
-        <td class="px-5 py-3 text-right font-bold text-[#1e90ff] dark:text-[#70b7ff]">
-          Rs. {{ total_income | round(2) }}
-        </td>
-        <td class="px-5 py-3 hidden sm:table-cell"></td>
-        <td class="px-5 py-3"></td>
-      </tr>
-    </tfoot>
-  </table>
-
-</div>
-
-{% else %}
-
-<div class="text-center py-20">
-  <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-50 dark:bg-blue-900/20 mb-4">
-    <i class="fas fa-money-bill-wave text-2xl text-[#1e90ff] dark:text-[#70b7ff]"></i>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="text-center py-10">
+      <p class="text-sm text-gray-400 dark:text-gray-500">No expected income sources added</p>
+      <a href="{{ url_for('income.add_income') }}" class="text-sm text-[#0f8238] dark:text-[#5bd68d] hover:underline">
+        Add your first source
+      </a>
+    </div>
+    {% endif %}
   </div>
-  <p class="text-gray-500 dark:text-gray-400 mb-1">No income sources added yet</p>
-  <p class="text-sm text-gray-400 dark:text-gray-500">
-    <a href="{{ url_for('income.add_income') }}" class="text-[#0f8238] dark:text-[#5bd68d] hover:underline">Add your first income source</a>
-  </p>
-</div>
 
-{% endif %}
+  <!-- Actual Income Section (Read-only) -->
+  <div class="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700
+              rounded-lg shadow-sm transition overflow-hidden">
+
+    <div class="px-5 py-4 border-b border-gray-100 dark:border-gray-700/50 flex items-center justify-between">
+      <h3 class="text-base font-semibold text-[#0f8238] dark:text-[#5bd68d]">
+        <i class="fas fa-calculator mr-2"></i>Actual Income
+      </h3>
+      <span class="text-sm font-bold text-[#0f8238] dark:text-[#5bd68d]">Rs. {{ total_actual_income | round(2) }}</span>
+    </div>
+
+    {% if actual_income_by_person %}
+    <table class="w-full text-sm text-left">
+      <thead class="bg-gray-50 dark:bg-[#222] text-xs uppercase text-gray-500 dark:text-gray-400">
+        <tr>
+          <th class="px-5 py-3">Contributor</th>
+          <th class="px-5 py-3 text-right">Amount Spent</th>
+          <th class="px-5 py-3 text-right">Share</th>
+        </tr>
+      </thead>
+      <tbody class="text-gray-700 dark:text-gray-200">
+        {% for person, amount in actual_income_by_person.items() %}
+        {% set share = ((amount / total_actual_income) * 100) if total_actual_income else 0 %}
+        <tr class="border-t border-gray-100 dark:border-gray-700/50">
+          <td class="px-5 py-3.5">
+            <div class="font-medium text-gray-900 dark:text-gray-100">{{ person or "Unknown" }}</div>
+          </td>
+          <td class="px-5 py-3.5 text-right">
+            <span class="font-semibold text-[#0f8238] dark:text-[#5bd68d]">Rs. {{ amount | round(2) }}</span>
+          </td>
+          <td class="px-5 py-3.5 text-right">
+            <div class="flex items-center justify-end gap-2">
+              <div class="w-16 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                <div class="h-full bg-[#0f8238] dark:bg-[#5bd68d] rounded-full" style="width: {{ share }}%;"></div>
+              </div>
+              <span class="text-xs text-gray-500 dark:text-gray-400 w-10 text-right">{{ share | round(1) }}%</span>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <div class="px-5 py-3 bg-gray-50 dark:bg-[#222] border-t border-gray-100 dark:border-gray-700/50">
+      <p class="text-xs text-gray-500 dark:text-gray-400">
+        <i class="fas fa-info-circle mr-1"></i>
+        Actual income is auto-calculated from expenses grouped by "Done By" field
+      </p>
+    </div>
+    {% else %}
+    <div class="text-center py-10">
+      <p class="text-sm text-gray-400 dark:text-gray-500">No expenses recorded yet</p>
+      <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">Add expenses to see actual income by contributor</p>
+    </div>
+    {% endif %}
+  </div>
+
+</div>
 
 {% if incomes %}
 <script>

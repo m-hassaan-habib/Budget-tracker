@@ -24,17 +24,27 @@ def index():
             default_done_by = setting['default_done_by'] if setting else None
 
             # Current month snapshot for End Month preview
+            # Expected income
             cur.execute("SELECT COALESCE(SUM(amount),0) AS total, COUNT(*) AS count FROM income WHERE user_id=%s", (session['user_id'],))
             inc_row = cur.fetchone()
-            month_income = float(inc_row['total'])
+            month_expected_income = float(inc_row['total'])
             income_count = int(inc_row['count'])
 
+            # Expenses
             cur.execute("SELECT COALESCE(SUM(amount),0) AS total, COUNT(*) AS count FROM expense WHERE user_id=%s", (session['user_id'],))
             exp_row = cur.fetchone()
             month_expenses = float(exp_row['total'])
             expense_count = int(exp_row['count'])
 
-            month_net = month_income - month_expenses
+            # Actual income (from expenses grouped by done_by)
+            cur.execute("""
+                SELECT done_by, SUM(amount) AS total
+                FROM expense WHERE user_id=%s GROUP BY done_by
+            """, (session['user_id'],))
+            month_actual_income = sum(float(row['total']) for row in cur.fetchall())
+
+            month_net = month_expected_income - month_expenses
+            month_income_variance = month_expected_income - month_actual_income
 
             # Count archived months
             cur.execute("""
@@ -51,7 +61,9 @@ def index():
             current_limit=current_limit,
             total_savings=total_savings,
             default_done_by=default_done_by,
-            month_income=month_income,
+            month_expected_income=month_expected_income,
+            month_actual_income=month_actual_income,
+            month_income_variance=month_income_variance,
             month_expenses=month_expenses,
             month_net=month_net,
             income_count=income_count,
@@ -138,11 +150,11 @@ def end_month():
                     (row['source'], row['amount'], month_str, session['user_id'])
                 )
 
-            cur.execute("SELECT amount, category, note, date FROM expense WHERE user_id=%s", (session['user_id'],))
+            cur.execute("SELECT amount, category, note, date, done_by FROM expense WHERE user_id=%s", (session['user_id'],))
             for row in cur.fetchall():
                 cur.execute(
-                    "INSERT INTO archived_expense (amount, category, note, date, month, user_id) VALUES (%s, %s, %s, %s, %s, %s)",
-                    (row['amount'], row['category'], row['note'], row['date'], month_str, session['user_id'])
+                    "INSERT INTO archived_expense (amount, category, note, date, month, user_id, done_by) VALUES (%s, %s, %s, %s, %s, %s, %s)",
+                    (row['amount'], row['category'], row['note'], row['date'], month_str, session['user_id'], row['done_by'])
                 )
 
             cur.execute("DELETE FROM income WHERE user_id=%s", (session['user_id'],))

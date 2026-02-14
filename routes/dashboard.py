@@ -9,11 +9,12 @@ def index():
     conn = current_app.db_pool.get_connection()
     try:
         with conn.cursor(dictionary=True) as cur:
+            # Expected income (manually entered)
             cur.execute(
                 "SELECT COALESCE(SUM(amount), 0) AS total FROM income WHERE user_id=%s",
                 (session['user_id'],)
             )
-            total_income = float(cur.fetchone()['total'])
+            total_expected_income = float(cur.fetchone()['total'])
 
             cur.execute(
                 "SELECT COALESCE(SUM(amount), 0) AS total FROM expense WHERE user_id=%s",
@@ -21,7 +22,8 @@ def index():
             )
             total_expenses = float(cur.fetchone()['total'])
 
-            net_savings = total_income - total_expenses
+            # Net savings uses expected income
+            net_savings = total_expected_income - total_expenses
 
             cur.execute(
                 "SELECT monthly_limit, total_savings FROM setting WHERE user_id=%s LIMIT 1",
@@ -77,6 +79,10 @@ def index():
             who_labels = [row['done_by'] for row in who_data]
             who_values = [float(row['total']) for row in who_data]
 
+            # Actual income = total expenses grouped by done_by (same as who_values sum)
+            total_actual_income = sum(who_values)
+            income_variance = total_expected_income - total_actual_income
+
             # Recent expenses for quick view
             cur.execute("""
                 SELECT id, amount, category, note, date
@@ -93,7 +99,9 @@ def index():
 
         return render_template(
             "dashboard.html",
-            total_income=total_income,
+            total_expected_income=total_expected_income,
+            total_actual_income=total_actual_income,
+            income_variance=income_variance,
             total_expenses=total_expenses,
             net_savings=net_savings,
             total_savings=total_savings,

@@ -39,19 +39,34 @@
   {% else %}
 
   <!-- Summary Cards -->
-  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
 
-    <!-- Total Income -->
+    <!-- Expected Income -->
     <div class="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700
                 rounded-lg p-5 shadow-sm transition">
       <div class="flex items-center justify-between mb-2">
-        <span class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Income</span>
+        <span class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Expected Income</span>
         <i class="fas fa-money-bill-wave text-[#1e90ff] dark:text-[#70b7ff]"></i>
       </div>
       <p class="text-2xl font-extrabold text-[#1e90ff] dark:text-[#70b7ff]">
         Rs. {{ total_income_month | round(2) }}
       </p>
       <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">{{ incomes | length }} source{{ 's' if incomes | length != 1 }}</p>
+    </div>
+
+    <!-- Actual Income -->
+    <div class="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700
+                rounded-lg p-5 shadow-sm transition">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Actual Income</span>
+        <i class="fas fa-calculator text-[#0f8238] dark:text-[#5bd68d]"></i>
+      </div>
+      <p class="text-2xl font-extrabold text-[#0f8238] dark:text-[#5bd68d]">
+        Rs. {{ total_actual_income_month | round(2) }}
+      </p>
+      <p class="text-xs {% if income_variance >= 0 %}text-green-500{% else %}text-red-500{% endif %} mt-1">
+        {% if income_variance >= 0 %}+{% endif %}Rs. {{ income_variance | round(2) }} variance
+      </p>
     </div>
 
     <!-- Total Expenses -->
@@ -77,7 +92,7 @@
       <p class="text-2xl font-extrabold {% if net_savings >= 0 %}text-[#0f8238] dark:text-[#5bd68d]{% else %}text-red-500{% endif %}">
         Rs. {{ net_savings | round(2) }}
       </p>
-      <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">Income - Expenses</p>
+      <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">Expected - Expenses</p>
     </div>
 
     <!-- Savings Rate -->
@@ -99,7 +114,7 @@
   </div>
 
   <!-- Charts + Category Breakdown -->
-  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
 
     <!-- Category Pie Chart -->
     <div class="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700
@@ -146,46 +161,91 @@
   </div>
 
   <!-- Income & Expenses Tables -->
-  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+  <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
 
-    <!-- Income Panel -->
-    <div class="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700
-                rounded-lg shadow-sm p-5 transition">
-      <h3 class="text-base font-semibold mb-4 text-[#1e90ff] dark:text-[#70b7ff] flex justify-between items-center">
-        <span><i class="fas fa-arrow-down mr-2"></i>Income Sources</span>
-        <span class="text-sm font-bold">Rs. {{ total_income_month | round(2) }}</span>
-      </h3>
+    <!-- Income Panel (2 cols) - Split into Expected and Actual -->
+    <div class="lg:col-span-2 space-y-4">
 
-      {% if incomes %}
-      <div class="overflow-x-auto">
-        <table class="w-full text-sm text-left text-gray-700 dark:text-gray-200">
-          <thead class="bg-gray-50 dark:bg-[#222] text-gray-500 dark:text-gray-400 text-xs uppercase">
-            <tr>
-              <th class="px-4 py-2.5">Source</th>
-              <th class="px-4 py-2.5 text-right">Amount</th>
-              <th class="px-4 py-2.5 text-right">Share</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for inc in incomes %}
-            <tr class="border-t border-gray-100 dark:border-gray-700/50">
-              <td class="px-4 py-2.5 font-medium">{{ inc.source }}</td>
-              <td class="px-4 py-2.5 text-right">Rs. {{ inc.amount }}</td>
-              <td class="px-4 py-2.5 text-right text-xs text-gray-400 dark:text-gray-500">
-                {{ ((inc.amount / total_income_month) * 100) | round(1) if total_income_month else 0 }}%
-              </td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
+      <!-- Expected Income -->
+      <div class="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700
+                  rounded-lg shadow-sm p-5 transition">
+        <h3 class="text-base font-semibold mb-4 text-[#1e90ff] dark:text-[#70b7ff] flex justify-between items-center">
+          <span><i class="fas fa-edit mr-2"></i>Expected Income</span>
+          <span class="text-sm font-bold">Rs. {{ total_income_month | round(2) }}</span>
+        </h3>
+
+        {% if incomes %}
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm text-left text-gray-700 dark:text-gray-200">
+            <thead class="bg-gray-50 dark:bg-[#222] text-gray-500 dark:text-gray-400 text-xs uppercase">
+              <tr>
+                <th class="px-4 py-2.5">Source</th>
+                <th class="px-4 py-2.5 text-right">Amount</th>
+                <th class="px-4 py-2.5 text-right">Share</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for inc in incomes %}
+              <tr class="border-t border-gray-100 dark:border-gray-700/50">
+                <td class="px-4 py-2.5 font-medium">{{ inc.source }}</td>
+                <td class="px-4 py-2.5 text-right">Rs. {{ inc.amount }}</td>
+                <td class="px-4 py-2.5 text-right text-xs text-gray-400 dark:text-gray-500">
+                  {{ ((inc.amount / total_income_month) * 100) | round(1) if total_income_month else 0 }}%
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <p class="text-sm text-gray-400 dark:text-gray-500 text-center py-4">No expected income records</p>
+        {% endif %}
       </div>
-      {% else %}
-      <p class="text-sm text-gray-400 dark:text-gray-500 text-center py-6">No income records</p>
-      {% endif %}
+
+      <!-- Actual Income -->
+      <div class="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700
+                  rounded-lg shadow-sm p-5 transition">
+        <h3 class="text-base font-semibold mb-4 text-[#0f8238] dark:text-[#5bd68d] flex justify-between items-center">
+          <span><i class="fas fa-calculator mr-2"></i>Actual Income</span>
+          <span class="text-sm font-bold">Rs. {{ total_actual_income_month | round(2) }}</span>
+        </h3>
+
+        {% if actual_income_by_person %}
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm text-left text-gray-700 dark:text-gray-200">
+            <thead class="bg-gray-50 dark:bg-[#222] text-gray-500 dark:text-gray-400 text-xs uppercase">
+              <tr>
+                <th class="px-4 py-2.5">Contributor</th>
+                <th class="px-4 py-2.5 text-right">Amount</th>
+                <th class="px-4 py-2.5 text-right">Share</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for person, amount in actual_income_by_person.items() %}
+              <tr class="border-t border-gray-100 dark:border-gray-700/50">
+                <td class="px-4 py-2.5 font-medium">{{ person or "Unknown" }}</td>
+                <td class="px-4 py-2.5 text-right">Rs. {{ amount | round(2) }}</td>
+                <td class="px-4 py-2.5 text-right text-xs text-gray-400 dark:text-gray-500">
+                  {{ ((amount / total_actual_income_month) * 100) | round(1) if total_actual_income_month else 0 }}%
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        <p class="text-xs text-gray-400 dark:text-gray-500 mt-3 pt-3 border-t border-gray-100 dark:border-gray-700/50">
+          <i class="fas fa-info-circle mr-1"></i>
+          Calculated from archived expenses grouped by "Done By"
+        </p>
+        {% else %}
+        <p class="text-sm text-gray-400 dark:text-gray-500 text-center py-4">No expense records</p>
+        {% endif %}
+      </div>
+
     </div>
 
-    <!-- Expenses Panel -->
-    <div class="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700
+    <!-- Expenses Panel (3 cols) -->
+    <div class="lg:col-span-3 bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700
                 rounded-lg shadow-sm p-5 transition">
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
         <h3 class="text-base font-semibold text-[#f3703f] dark:text-[#ff9966]">
@@ -214,6 +274,7 @@
               <th class="px-4 py-2.5">Amount</th>
               <th class="px-4 py-2.5">Category</th>
               <th class="px-4 py-2.5 hidden sm:table-cell">Note</th>
+              <th class="px-4 py-2.5 hidden md:table-cell">Done By</th>
               <th class="px-4 py-2.5 text-right">Date</th>
             </tr>
           </thead>
@@ -233,6 +294,9 @@
               </td>
               <td class="px-4 py-2.5 text-gray-500 dark:text-gray-400 hidden sm:table-cell truncate max-w-[200px]">
                 {{ exp.note or "—" }}
+              </td>
+              <td class="px-4 py-2.5 text-gray-600 dark:text-gray-300 hidden md:table-cell">
+                {{ exp.done_by or "Self" }}
               </td>
               <td class="px-4 py-2.5 text-right text-xs text-gray-500 dark:text-gray-400">
                 {{ exp.date }}

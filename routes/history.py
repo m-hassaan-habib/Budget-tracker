@@ -29,8 +29,11 @@ def index():
             category_breakdown = {}
             expense_categories = []
 
+            actual_income_by_person = {}
+            total_actual_income_month = 0.0
+
             if selected_month:
-                # Income
+                # Expected Income (manually entered, archived)
                 cur.execute(
                     "SELECT id, source, amount FROM archived_income WHERE month=%s AND user_id=%s",
                     (selected_month, session['user_id'])
@@ -41,9 +44,17 @@ def index():
                 ]
                 total_income_month = sum(i["amount"] for i in archived_income)
 
+                # Actual Income (calculated from archived expenses grouped by done_by)
+                cur.execute("""
+                    SELECT done_by, SUM(amount) AS total
+                    FROM archived_expense WHERE month=%s AND user_id=%s GROUP BY done_by
+                """, (selected_month, session['user_id']))
+                actual_income_by_person = {row['done_by']: float(row['total']) for row in cur.fetchall()}
+                total_actual_income_month = sum(actual_income_by_person.values())
+
                 # Expenses
                 expense_query = """
-                    SELECT id, amount, category, note, date
+                    SELECT id, amount, category, note, date, done_by
                     FROM archived_expense
                     WHERE month=%s AND user_id=%s
                 """
@@ -63,6 +74,7 @@ def index():
                         "category": r['category'],
                         "note": r['note'],
                         "date": r['date'],
+                        "done_by": r['done_by'],
                     }
                     for r in cur.fetchall()
                 ]
@@ -90,6 +102,7 @@ def index():
 
         net_savings = total_income_month - total_expense_month
         savings_rate = (net_savings / total_income_month * 100) if total_income_month else 0
+        income_variance = total_income_month - total_actual_income_month
 
         return render_template(
             "history.html",
@@ -98,6 +111,9 @@ def index():
             incomes=archived_income,
             expenses=archived_expenses,
             total_income_month=total_income_month,
+            total_actual_income_month=total_actual_income_month,
+            actual_income_by_person=actual_income_by_person,
+            income_variance=income_variance,
             total_expense_month=total_expense_month,
             net_savings=net_savings,
             savings_rate=savings_rate,
@@ -117,7 +133,7 @@ def view_archived_expense(id):
         with conn.cursor(dictionary=True) as cur:
             cur.execute(
                 """
-                SELECT id, amount, category, note, date
+                SELECT id, amount, category, note, date, done_by
                 FROM archived_expense
                 WHERE id=%s AND user_id=%s
                 """,

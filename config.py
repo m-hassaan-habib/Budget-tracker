@@ -22,11 +22,16 @@ class Config:
 
     @staticmethod
     def init_db(app):
-        app.db_pool = mysql.connector.pooling.MySQLConnectionPool(
-            pool_name="budget_pool",
-            pool_size=5,
-            host=Config.MYSQL_HOST,
-            user=Config.MYSQL_USER,
-            password=Config.MYSQL_PASSWORD,
-            database=Config.MYSQL_DATABASE
-        )
+        try:
+            app.db_pool = mysql.connector.pooling.MySQLConnectionPool(
+                pool_name="budget_pool",
+                pool_size=5,
+                host=Config.MYSQL_HOST,
+                user=Config.MYSQL_USER,
+                password=Config.MYSQL_PASSWORD,
+                database=Config.MYSQL_DATABASE
+            )
+        except mysql.connector.Error as e:
+            import logging
+            logging.error(f"Could not initialize database pool: {e}")
+            app.db_pool = None

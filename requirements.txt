@@ -1,6 +1,5 @@
 flask
 flask-wtf
-psycopg2-binary
 python-dotenv
 mysql-connector-python
 pytest

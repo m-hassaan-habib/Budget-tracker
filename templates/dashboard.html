@@ -15,25 +15,27 @@
 
   <!-- Income -->
   <div class="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700 rounded-xl p-6 shadow-sm transition">
-    <div class="flex items-center gap-3 mb-4">
+    <div class="flex items-center gap-3 mb-3">
       <div class="w-10 h-10 rounded-lg bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center">
         <i class="fas fa-arrow-down text-[#1e90ff] dark:text-[#70b7ff]"></i>
       </div>
       <div>
-        <p class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Total Income</p>
-        <p class="text-2xl font-extrabold text-[#1e90ff] dark:text-[#70b7ff]">Rs. {{ total_income | round(2) }}</p>
+        <p class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Expected Income</p>
+        <p class="text-2xl font-extrabold text-[#1e90ff] dark:text-[#70b7ff]">Rs. {{ total_expected_income | round(2) }}</p>
       </div>
     </div>
-    {% if monthly_limit %}
-    <div class="flex justify-between text-xs text-gray-500 dark:text-gray-400 mb-1.5">
-      <span>Budget Limit</span>
-      <span>Rs. {{ monthly_limit | round(2) }}</span>
+    <!-- Actual Income sub-row -->
+    <div class="flex justify-between items-center text-sm mb-2 py-2 border-t border-gray-100 dark:border-gray-700/50">
+      <span class="text-gray-500 dark:text-gray-400">Actual Income</span>
+      <span class="font-semibold text-[#0f8238] dark:text-[#5bd68d]">Rs. {{ total_actual_income | round(2) }}</span>
     </div>
-    <div class="w-full h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
-      <div class="h-full bg-[#1e90ff] dark:bg-[#70b7ff] rounded-full transition-all duration-700"
-           style="width: {{ ((total_income / monthly_limit * 100) if monthly_limit else 0) | clamp(0,100) | round(1) }}%;"></div>
+    <!-- Variance -->
+    <div class="flex justify-between items-center text-sm">
+      <span class="text-gray-500 dark:text-gray-400">Variance</span>
+      <span class="font-semibold {% if income_variance >= 0 %}text-[#0f8238] dark:text-[#5bd68d]{% else %}text-red-500{% endif %}">
+        {% if income_variance >= 0 %}+{% endif %}Rs. {{ income_variance | round(2) }}
+      </span>
     </div>
-    {% endif %}
   </div>
 
   <!-- Expenses -->

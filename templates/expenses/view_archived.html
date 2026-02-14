@@ -24,6 +24,10 @@
       {{ expense.date }}
     </p>
 
+    <p class="flex items-center gap-2 text-gray-600 dark:text-gray-300">
+      <i class="fas fa-user"></i> Done by: {{ expense.done_by or "Self" }}
+    </p>
+
     {% if expense.note %}
     <p class="text-gray-700 dark:text-gray-300">
       {{ expense.note }}

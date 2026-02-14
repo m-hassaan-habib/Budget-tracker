@@ -20,18 +20,34 @@
         </h3>
 
         <div class="space-y-4">
-          <!-- Income -->
+          <!-- Expected Income -->
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-2">
               <div class="w-8 h-8 rounded-full bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center">
                 <i class="fas fa-arrow-down text-xs text-[#1e90ff] dark:text-[#70b7ff]"></i>
               </div>
               <div>
-                <p class="text-xs text-gray-500 dark:text-gray-400">Income</p>
-                <p class="text-sm font-semibold text-gray-800 dark:text-gray-200">Rs. {{ month_income | round(2) }}</p>
+                <p class="text-xs text-gray-500 dark:text-gray-400">Expected Income</p>
+                <p class="text-sm font-semibold text-gray-800 dark:text-gray-200">Rs. {{ month_expected_income | round(2) }}</p>
               </div>
             </div>
             <span class="text-xs text-gray-400 dark:text-gray-500">{{ income_count }} item{{ 's' if income_count != 1 }}</span>
+          </div>
+
+          <!-- Actual Income -->
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <div class="w-8 h-8 rounded-full bg-green-50 dark:bg-green-900/20 flex items-center justify-center">
+                <i class="fas fa-calculator text-xs text-[#0f8238] dark:text-[#5bd68d]"></i>
+              </div>
+              <div>
+                <p class="text-xs text-gray-500 dark:text-gray-400">Actual Income</p>
+                <p class="text-sm font-semibold text-gray-800 dark:text-gray-200">Rs. {{ month_actual_income | round(2) }}</p>
+              </div>
+            </div>
+            <span class="text-xs {% if month_income_variance >= 0 %}text-green-500{% else %}text-red-500{% endif %}">
+              {% if month_income_variance >= 0 %}+{% endif %}{{ month_income_variance | round(2) }}
+            </span>
           </div>
 
           <!-- Expenses -->
@@ -185,10 +201,14 @@
           <p class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-2">
             Will be archived
           </p>
-          <div class="grid grid-cols-3 gap-3">
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div>
-              <p class="text-xs text-gray-400 dark:text-gray-500">Income</p>
-              <p class="font-semibold text-[#1e90ff] dark:text-[#70b7ff]">Rs. {{ month_income | round(2) }}</p>
+              <p class="text-xs text-gray-400 dark:text-gray-500">Expected Income</p>
+              <p class="font-semibold text-[#1e90ff] dark:text-[#70b7ff]">Rs. {{ month_expected_income | round(2) }}</p>
+            </div>
+            <div>
+              <p class="text-xs text-gray-400 dark:text-gray-500">Actual Income</p>
+              <p class="font-semibold text-[#0f8238] dark:text-[#5bd68d]">Rs. {{ month_actual_income | round(2) }}</p>
             </div>
             <div>
               <p class="text-xs text-gray-400 dark:text-gray-500">Expenses</p>
