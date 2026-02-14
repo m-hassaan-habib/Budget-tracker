@@ -10,29 +10,31 @@ def index():
     conn = current_app.db_pool.get_connection()
     try:
         with conn.cursor(dictionary=True) as cur:
-            # Expected income (manually entered)
+            # Check income mode setting
+            cur.execute("SELECT use_automated_income FROM setting WHERE user_id=%s LIMIT 1", (session['user_id'],))
+            setting = cur.fetchone()
+            use_automated_income = bool(setting['use_automated_income']) if setting else False
+
+            # Manual income (user-entered)
             cur.execute("SELECT id, source, amount FROM income WHERE user_id=%s ORDER BY amount DESC", (session['user_id'],))
             incomes = [{"id": row['id'], "source": row['source'], "amount": float(row['amount'])} for row in cur.fetchall()]
-            total_expected_income = sum(i['amount'] for i in incomes)
+            total_manual_income = sum(i['amount'] for i in incomes)
 
-            # Actual income (calculated from expenses grouped by done_by)
+            # Automated income (calculated from expenses grouped by done_by)
             cur.execute("""
                 SELECT done_by, SUM(amount) AS total
                 FROM expense WHERE user_id=%s GROUP BY done_by
             """, (session['user_id'],))
-            actual_income_by_person = {row['done_by']: float(row['total']) for row in cur.fetchall()}
-            total_actual_income = sum(actual_income_by_person.values())
-
-            # Variance between expected and actual
-            income_variance = total_expected_income - total_actual_income
+            income_by_person = {row['done_by']: float(row['total']) for row in cur.fetchall()}
+            total_automated_income = sum(income_by_person.values())
 
         return render_template(
             'income.html',
+            use_automated_income=use_automated_income,
             incomes=incomes,
-            total_expected_income=total_expected_income,
-            actual_income_by_person=actual_income_by_person,
-            total_actual_income=total_actual_income,
-            income_variance=income_variance,
+            total_manual_income=total_manual_income,
+            income_by_person=income_by_person,
+            total_automated_income=total_automated_income,
         )
     finally:
         conn.close()

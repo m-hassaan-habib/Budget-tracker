@@ -9,12 +9,22 @@ def index():
     conn = current_app.db_pool.get_connection()
     try:
         with conn.cursor(dictionary=True) as cur:
-            # Expected income (manually entered)
+            # Get settings including income mode toggle
+            cur.execute(
+                "SELECT monthly_limit, total_savings, use_automated_income FROM setting WHERE user_id=%s LIMIT 1",
+                (session['user_id'],)
+            )
+            setting = cur.fetchone()
+            monthly_limit = float(setting['monthly_limit']) if setting else 0
+            total_savings = float(setting['total_savings']) if setting else 0
+            use_automated_income = bool(setting['use_automated_income']) if setting else False
+
+            # Manual income (user-entered)
             cur.execute(
                 "SELECT COALESCE(SUM(amount), 0) AS total FROM income WHERE user_id=%s",
                 (session['user_id'],)
             )
-            total_expected_income = float(cur.fetchone()['total'])
+            total_manual_income = float(cur.fetchone()['total'])
 
             cur.execute(
                 "SELECT COALESCE(SUM(amount), 0) AS total FROM expense WHERE user_id=%s",
@@ -22,16 +32,21 @@ def index():
             )
             total_expenses = float(cur.fetchone()['total'])
 
-            # Net savings uses expected income
-            net_savings = total_expected_income - total_expenses
+            # Automated income (calculated from expenses by done_by)
+            cur.execute("""
+                SELECT done_by, SUM(amount) AS total
+                FROM expense
+                WHERE user_id=%s
+                GROUP BY done_by
+            """, (session['user_id'],))
+            who_data = cur.fetchall()
+            who_labels = [row['done_by'] for row in who_data]
+            who_values = [float(row['total']) for row in who_data]
+            total_automated_income = sum(who_values)
 
-            cur.execute(
-                "SELECT monthly_limit, total_savings FROM setting WHERE user_id=%s LIMIT 1",
-                (session['user_id'],)
-            )
-            setting = cur.fetchone()
-            monthly_limit = float(setting['monthly_limit']) if setting else 0
-            total_savings = float(setting['total_savings']) if setting else 0
+            # Use the appropriate income based on toggle
+            total_income = total_automated_income if use_automated_income else total_manual_income
+            net_savings = total_income - total_expenses
 
             grand_total = net_savings + total_savings
 
@@ -69,20 +84,6 @@ def index():
             savings_labels = [row['mon'] for row in monthly_data]
             savings_values = [float(row['savings']) for row in monthly_data]
 
-            cur.execute("""
-                SELECT done_by, SUM(amount) AS total
-                FROM expense
-                WHERE user_id=%s
-                GROUP BY done_by
-            """, (session['user_id'],))
-            who_data = cur.fetchall()
-            who_labels = [row['done_by'] for row in who_data]
-            who_values = [float(row['total']) for row in who_data]
-
-            # Actual income = total expenses grouped by done_by (same as who_values sum)
-            total_actual_income = sum(who_values)
-            income_variance = total_expected_income - total_actual_income
-
             # Recent expenses for quick view
             cur.execute("""
                 SELECT id, amount, category, note, date
@@ -99,9 +100,10 @@ def index():
 
         return render_template(
             "dashboard.html",
-            total_expected_income=total_expected_income,
-            total_actual_income=total_actual_income,
-            income_variance=income_variance,
+            use_automated_income=use_automated_income,
+            total_income=total_income,
+            total_manual_income=total_manual_income,
+            total_automated_income=total_automated_income,
             total_expenses=total_expenses,
             net_savings=net_savings,
             total_savings=total_savings,

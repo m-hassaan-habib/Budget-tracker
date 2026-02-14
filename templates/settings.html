@@ -20,34 +20,41 @@
         </h3>
 
         <div class="space-y-4">
-          <!-- Expected Income -->
-          <div class="flex items-center justify-between">
-            <div class="flex items-center gap-2">
-              <div class="w-8 h-8 rounded-full bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center">
-                <i class="fas fa-arrow-down text-xs text-[#1e90ff] dark:text-[#70b7ff]"></i>
-              </div>
-              <div>
-                <p class="text-xs text-gray-500 dark:text-gray-400">Expected Income</p>
-                <p class="text-sm font-semibold text-gray-800 dark:text-gray-200">Rs. {{ month_expected_income | round(2) }}</p>
-              </div>
-            </div>
-            <span class="text-xs text-gray-400 dark:text-gray-500">{{ income_count }} item{{ 's' if income_count != 1 }}</span>
-          </div>
-
-          <!-- Actual Income -->
+          <!-- Active Income (based on mode) -->
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-2">
               <div class="w-8 h-8 rounded-full bg-green-50 dark:bg-green-900/20 flex items-center justify-center">
-                <i class="fas fa-calculator text-xs text-[#0f8238] dark:text-[#5bd68d]"></i>
+                <i class="fas {% if use_automated_income %}fa-calculator{% else %}fa-arrow-down{% endif %} text-xs text-[#0f8238] dark:text-[#5bd68d]"></i>
               </div>
               <div>
-                <p class="text-xs text-gray-500 dark:text-gray-400">Actual Income</p>
-                <p class="text-sm font-semibold text-gray-800 dark:text-gray-200">Rs. {{ month_actual_income | round(2) }}</p>
+                <p class="text-xs text-gray-500 dark:text-gray-400">
+                  {% if use_automated_income %}Automated{% else %}Manual{% endif %} Income
+                  <span class="ml-1 text-[9px] px-1 py-0.5 bg-[#0f8238] text-white rounded">ACTIVE</span>
+                </p>
+                <p class="text-sm font-semibold text-gray-800 dark:text-gray-200">Rs. {{ month_income | round(2) }}</p>
               </div>
             </div>
-            <span class="text-xs {% if month_income_variance >= 0 %}text-green-500{% else %}text-red-500{% endif %}">
-              {% if month_income_variance >= 0 %}+{% endif %}{{ month_income_variance | round(2) }}
+            <span class="text-xs text-gray-400 dark:text-gray-500">
+              {% if use_automated_income %}from expenses{% else %}{{ income_count }} item{{ 's' if income_count != 1 }}{% endif %}
             </span>
+          </div>
+
+          <!-- Secondary Income (inactive) -->
+          <div class="flex items-center justify-between opacity-60">
+            <div class="flex items-center gap-2">
+              <div class="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                <i class="fas {% if use_automated_income %}fa-arrow-down{% else %}fa-calculator{% endif %} text-xs text-gray-400 dark:text-gray-500"></i>
+              </div>
+              <div>
+                <p class="text-xs text-gray-500 dark:text-gray-400">
+                  {% if use_automated_income %}Manual{% else %}Automated{% endif %} Income
+                </p>
+                <p class="text-sm font-semibold text-gray-400 dark:text-gray-500">
+                  Rs. {% if use_automated_income %}{{ month_manual_income | round(2) }}{% else %}{{ month_automated_income | round(2) }}{% endif %}
+                </p>
+              </div>
+            </div>
+            <span class="text-xs text-gray-400 dark:text-gray-500">inactive</span>
           </div>
 
           <!-- Expenses -->
@@ -175,6 +182,41 @@
           </div>
         </div>
 
+        <!-- Income Mode Toggle -->
+        <div class="mt-5 p-4 bg-gray-50 dark:bg-[#222] rounded-lg border border-gray-200 dark:border-gray-700">
+          <div class="flex items-center justify-between">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Income Mode
+              </label>
+              <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                {% if use_automated_income %}
+                Automated: Income is calculated from expenses by "Done By" field
+                {% else %}
+                Manual: You enter income sources manually
+                {% endif %}
+              </p>
+            </div>
+            <div class="flex items-center gap-3">
+              <span class="text-xs {% if not use_automated_income %}font-semibold text-[#0f8238] dark:text-[#5bd68d]{% else %}text-gray-400{% endif %}">Manual</span>
+              <label class="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" name="use_automated_income" value="1"
+                       {% if use_automated_income %}checked{% endif %}
+                       class="sr-only peer">
+                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2
+                            peer-focus:ring-[#0f8238] dark:peer-focus:ring-[#5bd68d]
+                            rounded-full peer dark:bg-gray-700
+                            peer-checked:after:translate-x-full peer-checked:after:border-white
+                            after:content-[''] after:absolute after:top-[2px] after:left-[2px]
+                            after:bg-white after:border-gray-300 after:border after:rounded-full
+                            after:h-5 after:w-5 after:transition-all dark:border-gray-600
+                            peer-checked:bg-[#0f8238] dark:peer-checked:bg-[#5bd68d]"></div>
+              </label>
+              <span class="text-xs {% if use_automated_income %}font-semibold text-[#0f8238] dark:text-[#5bd68d]{% else %}text-gray-400{% endif %}">Automated</span>
+            </div>
+          </div>
+        </div>
+
         <button type="submit"
                 class="mt-5 bg-[#0f8238] text-white px-5 py-2.5 rounded-lg shadow-sm
                        hover:bg-green-700 transition font-medium text-sm">
@@ -203,12 +245,18 @@
           </p>
           <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div>
-              <p class="text-xs text-gray-400 dark:text-gray-500">Expected Income</p>
-              <p class="font-semibold text-[#1e90ff] dark:text-[#70b7ff]">Rs. {{ month_expected_income | round(2) }}</p>
+              <p class="text-xs text-gray-400 dark:text-gray-500">
+                {% if use_automated_income %}Automated{% else %}Manual{% endif %} Income
+              </p>
+              <p class="font-semibold text-[#0f8238] dark:text-[#5bd68d]">Rs. {{ month_income | round(2) }}</p>
             </div>
             <div>
-              <p class="text-xs text-gray-400 dark:text-gray-500">Actual Income</p>
-              <p class="font-semibold text-[#0f8238] dark:text-[#5bd68d]">Rs. {{ month_actual_income | round(2) }}</p>
+              <p class="text-xs text-gray-400 dark:text-gray-500">
+                {% if use_automated_income %}Manual{% else %}Automated{% endif %} (Ref)
+              </p>
+              <p class="font-semibold text-gray-400 dark:text-gray-500">
+                Rs. {% if use_automated_income %}{{ month_manual_income | round(2) }}{% else %}{{ month_automated_income | round(2) }}{% endif %}
+              </p>
             </div>
             <div>
               <p class="text-xs text-gray-400 dark:text-gray-500">Expenses</p>

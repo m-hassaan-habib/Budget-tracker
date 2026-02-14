@@ -16,24 +16,30 @@
   <!-- Income -->
   <div class="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700 rounded-xl p-6 shadow-sm transition">
     <div class="flex items-center gap-3 mb-3">
-      <div class="w-10 h-10 rounded-lg bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center">
-        <i class="fas fa-arrow-down text-[#1e90ff] dark:text-[#70b7ff]"></i>
+      <div class="w-10 h-10 rounded-lg bg-green-50 dark:bg-green-900/20 flex items-center justify-center">
+        <i class="fas fa-arrow-down text-[#0f8238] dark:text-[#5bd68d]"></i>
       </div>
       <div>
-        <p class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Expected Income</p>
-        <p class="text-2xl font-extrabold text-[#1e90ff] dark:text-[#70b7ff]">Rs. {{ total_expected_income | round(2) }}</p>
+        <p class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+          {% if use_automated_income %}Automated{% else %}Manual{% endif %} Income
+        </p>
+        <p class="text-2xl font-extrabold text-[#0f8238] dark:text-[#5bd68d]">Rs. {{ total_income | round(2) }}</p>
       </div>
     </div>
-    <!-- Actual Income sub-row -->
-    <div class="flex justify-between items-center text-sm mb-2 py-2 border-t border-gray-100 dark:border-gray-700/50">
-      <span class="text-gray-500 dark:text-gray-400">Actual Income</span>
-      <span class="font-semibold text-[#0f8238] dark:text-[#5bd68d]">Rs. {{ total_actual_income | round(2) }}</span>
+    <!-- Mode indicator -->
+    <div class="flex justify-between items-center text-sm py-2 border-t border-gray-100 dark:border-gray-700/50">
+      <span class="text-gray-500 dark:text-gray-400">Mode</span>
+      <span class="text-xs px-2 py-0.5 rounded-full {% if use_automated_income %}bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400{% else %}bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400{% endif %}">
+        {% if use_automated_income %}Automated{% else %}Manual{% endif %}
+      </span>
     </div>
-    <!-- Variance -->
+    <!-- Alternative income value -->
     <div class="flex justify-between items-center text-sm">
-      <span class="text-gray-500 dark:text-gray-400">Variance</span>
-      <span class="font-semibold {% if income_variance >= 0 %}text-[#0f8238] dark:text-[#5bd68d]{% else %}text-red-500{% endif %}">
-        {% if income_variance >= 0 %}+{% endif %}Rs. {{ income_variance | round(2) }}
+      <span class="text-gray-500 dark:text-gray-400">
+        {% if use_automated_income %}Manual{% else %}Automated{% endif %}
+      </span>
+      <span class="font-semibold text-gray-400 dark:text-gray-500">
+        Rs. {% if use_automated_income %}{{ total_manual_income | round(2) }}{% else %}{{ total_automated_income | round(2) }}{% endif %}
       </span>
     </div>
   </div>

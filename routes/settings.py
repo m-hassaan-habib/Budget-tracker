@@ -12,7 +12,7 @@ def index():
     try:
         with conn.cursor(dictionary=True) as cur:
             cur.execute("""
-                SELECT monthly_limit, total_savings, default_done_by
+                SELECT monthly_limit, total_savings, default_done_by, use_automated_income
                 FROM setting
                 WHERE user_id=%s
                 LIMIT 1
@@ -22,12 +22,12 @@ def index():
             current_limit = float(setting['monthly_limit']) if setting else 0
             total_savings = float(setting['total_savings']) if setting else 0
             default_done_by = setting['default_done_by'] if setting else None
+            use_automated_income = bool(setting['use_automated_income']) if setting else False
 
-            # Current month snapshot for End Month preview
-            # Expected income
+            # Manual income (user-entered)
             cur.execute("SELECT COALESCE(SUM(amount),0) AS total, COUNT(*) AS count FROM income WHERE user_id=%s", (session['user_id'],))
             inc_row = cur.fetchone()
-            month_expected_income = float(inc_row['total'])
+            month_manual_income = float(inc_row['total'])
             income_count = int(inc_row['count'])
 
             # Expenses
@@ -36,15 +36,17 @@ def index():
             month_expenses = float(exp_row['total'])
             expense_count = int(exp_row['count'])
 
-            # Actual income (from expenses grouped by done_by)
+            # Automated income (from expenses grouped by done_by)
             cur.execute("""
                 SELECT done_by, SUM(amount) AS total
                 FROM expense WHERE user_id=%s GROUP BY done_by
             """, (session['user_id'],))
-            month_actual_income = sum(float(row['total']) for row in cur.fetchall())
+            automated_income_by_person = {row['done_by']: float(row['total']) for row in cur.fetchall()}
+            month_automated_income = sum(automated_income_by_person.values())
 
-            month_net = month_expected_income - month_expenses
-            month_income_variance = month_expected_income - month_actual_income
+            # Use the appropriate income based on toggle
+            month_income = month_automated_income if use_automated_income else month_manual_income
+            month_net = month_income - month_expenses
 
             # Count archived months
             cur.execute("""
@@ -61,9 +63,10 @@ def index():
             current_limit=current_limit,
             total_savings=total_savings,
             default_done_by=default_done_by,
-            month_expected_income=month_expected_income,
-            month_actual_income=month_actual_income,
-            month_income_variance=month_income_variance,
+            use_automated_income=use_automated_income,
+            month_manual_income=month_manual_income,
+            month_automated_income=month_automated_income,
+            month_income=month_income,
             month_expenses=month_expenses,
             month_net=month_net,
             income_count=income_count,
@@ -80,6 +83,7 @@ def update_limit():
     limit = request.form.get('limit', '')
     savings = request.form.get('savings', '')
     default_done_by = request.form.get('default_done_by', '').strip()
+    use_automated_income = request.form.get('use_automated_income') == '1'
 
     try:
         limit_val = Decimal(limit)
@@ -104,17 +108,18 @@ def update_limit():
 
             if not row:
                 cur.execute("""
-                    INSERT INTO setting (monthly_limit, total_savings, default_done_by, user_id)
-                    VALUES (%s, %s, %s, %s)
-                """, (str(limit_val), str(savings_val), default_done_by or None, session['user_id']))
+                    INSERT INTO setting (monthly_limit, total_savings, default_done_by, use_automated_income, user_id)
+                    VALUES (%s, %s, %s, %s, %s)
+                """, (str(limit_val), str(savings_val), default_done_by or None, 1 if use_automated_income else 0, session['user_id']))
             else:
                 cur.execute("""
                     UPDATE setting
                     SET monthly_limit=%s,
                         total_savings=%s,
-                        default_done_by=%s
+                        default_done_by=%s,
+                        use_automated_income=%s
                     WHERE user_id=%s
-                """, (str(limit_val), str(savings_val), default_done_by or None, session['user_id']))
+                """, (str(limit_val), str(savings_val), default_done_by or None, 1 if use_automated_income else 0, session['user_id']))
 
             conn.commit()
         return redirect(url_for('settings.index'))
@@ -131,18 +136,31 @@ def end_month():
     conn = current_app.db_pool.get_connection()
     try:
         with conn.cursor(dictionary=True) as cur:
+            # Check income mode setting
+            cur.execute("SELECT use_automated_income, total_savings FROM setting WHERE user_id=%s LIMIT 1", (session['user_id'],))
+            setting = cur.fetchone()
+            use_automated_income = bool(setting['use_automated_income']) if setting else False
+
+            # Get manual income
             cur.execute("SELECT COALESCE(SUM(amount), 0) AS total FROM income WHERE user_id=%s", (session['user_id'],))
-            total_income = float(cur.fetchone()['total'])
+            manual_income = float(cur.fetchone()['total'])
+
+            # Get expenses
             cur.execute("SELECT COALESCE(SUM(amount), 0) AS total FROM expense WHERE user_id=%s", (session['user_id'],))
             total_expenses = float(cur.fetchone()['total'])
+
+            # Automated income = total expenses (sum of all done_by amounts)
+            automated_income = total_expenses
+
+            # Use the appropriate income based on toggle
+            total_income = automated_income if use_automated_income else manual_income
             net_savings = total_income - total_expenses
 
-            cur.execute("SELECT total_savings FROM setting WHERE user_id=%s LIMIT 1", (session['user_id'],))
-            setting = cur.fetchone()
             if setting:
                 new_savings = float(setting['total_savings']) + net_savings
                 cur.execute("UPDATE setting SET total_savings=%s WHERE user_id=%s", (new_savings, session['user_id']))
 
+            # Archive manual income (even if using automated, for historical records)
             cur.execute("SELECT source, amount FROM income WHERE user_id=%s", (session['user_id'],))
             for row in cur.fetchall():
                 cur.execute(
