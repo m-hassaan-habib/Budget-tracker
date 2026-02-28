@@ -1,7 +1,19 @@
 from flask import Blueprint, render_template, request, current_app, session
 from auth_utils import login_required
+from datetime import datetime
 
 history_bp = Blueprint('history', __name__, url_prefix='/history')
+
+
+def format_month(month_str):
+    """Convert 'YYYY-MM' to 'Month YYYY' format."""
+    if not month_str or '-' not in month_str:
+        return month_str
+    try:
+        dt = datetime.strptime(month_str, '%Y-%m')
+        return dt.strftime('%B %Y')
+    except ValueError:
+        return month_str
 
 
 @history_bp.route('/')
@@ -10,14 +22,14 @@ def index():
     conn = current_app.db_pool.get_connection()
     try:
         with conn.cursor(dictionary=True) as cur:
-            # Get all archived months
+            # Get all archived months based on actual expense dates
             cur.execute("""
                 SELECT month FROM archived_income WHERE user_id=%s
                 UNION
-                SELECT month FROM archived_expense WHERE user_id=%s
+                SELECT DATE_FORMAT(date, '%%Y-%%m') AS month FROM archived_expense WHERE user_id=%s AND date IS NOT NULL
                 ORDER BY month DESC
             """, (session['user_id'], session['user_id']))
-            months = [row['month'] for row in cur.fetchall()]
+            months = [row['month'] for row in cur.fetchall() if row['month'] and not row['month'].startswith('%')]
 
             selected_month = request.args.get('month') or (months[0] if months else None)
             category_filter = request.args.get('category', '')
@@ -34,6 +46,7 @@ def index():
 
             if selected_month:
                 # Expected Income (manually entered, archived)
+                # Income uses month column since it doesn't have a date field
                 cur.execute(
                     "SELECT id, source, amount FROM archived_income WHERE month=%s AND user_id=%s",
                     (selected_month, session['user_id'])
@@ -45,18 +58,21 @@ def index():
                 total_income_month = sum(i["amount"] for i in archived_income)
 
                 # Actual Income (calculated from archived expenses grouped by done_by)
+                # Filter by the actual expense date, not the archive month
                 cur.execute("""
                     SELECT done_by, SUM(amount) AS total
-                    FROM archived_expense WHERE month=%s AND user_id=%s GROUP BY done_by
+                    FROM archived_expense
+                    WHERE DATE_FORMAT(date, '%%Y-%%m')=%s AND user_id=%s
+                    GROUP BY done_by
                 """, (selected_month, session['user_id']))
                 actual_income_by_person = {row['done_by']: float(row['total']) for row in cur.fetchall()}
                 total_actual_income_month = sum(actual_income_by_person.values())
 
-                # Expenses
+                # Expenses - filter by actual expense date
                 expense_query = """
                     SELECT id, amount, category, note, date, done_by
                     FROM archived_expense
-                    WHERE month=%s AND user_id=%s
+                    WHERE DATE_FORMAT(date, '%%Y-%%m')=%s AND user_id=%s
                 """
                 expense_params = [selected_month, session['user_id']]
 
@@ -79,18 +95,18 @@ def index():
                     for r in cur.fetchall()
                 ]
 
-                # Total expenses (unfiltered for summary)
+                # Total expenses - filter by actual expense date
                 cur.execute(
-                    "SELECT COALESCE(SUM(amount),0) AS total FROM archived_expense WHERE month=%s AND user_id=%s",
+                    "SELECT COALESCE(SUM(amount),0) AS total FROM archived_expense WHERE DATE_FORMAT(date, '%%Y-%%m')=%s AND user_id=%s",
                     (selected_month, session['user_id'])
                 )
                 total_expense_month = float(cur.fetchone()['total'])
 
-                # Category breakdown
+                # Category breakdown - filter by actual expense date
                 cur.execute("""
                     SELECT category, SUM(amount) AS total, COUNT(*) AS count
                     FROM archived_expense
-                    WHERE month=%s AND user_id=%s
+                    WHERE DATE_FORMAT(date, '%%Y-%%m')=%s AND user_id=%s
                     GROUP BY category
                     ORDER BY total DESC
                 """, (selected_month, session['user_id']))
@@ -104,10 +120,15 @@ def index():
         savings_rate = (net_savings / total_income_month * 100) if total_income_month else 0
         income_variance = total_income_month - total_actual_income_month
 
+        # Create month options with display names
+        month_options = [(m, format_month(m)) for m in months]
+
         return render_template(
             "history.html",
             months=months,
+            month_options=month_options,
             selected_month=selected_month,
+            selected_month_display=format_month(selected_month) if selected_month else None,
             incomes=archived_income,
             expenses=archived_expenses,
             total_income_month=total_income_month,
@@ -162,10 +183,10 @@ def compare():
             cur.execute("""
                 SELECT DISTINCT month FROM archived_income WHERE user_id=%s
                 UNION
-                SELECT DISTINCT month FROM archived_expense WHERE user_id=%s
+                SELECT DISTINCT DATE_FORMAT(date, '%%Y-%%m') AS month FROM archived_expense WHERE user_id=%s AND date IS NOT NULL
                 ORDER BY month DESC
             """, (session['user_id'], session['user_id']))
-            months = [r['month'] for r in cur.fetchall()]
+            months = [r['month'] for r in cur.fetchall() if r['month'] and not r['month'].startswith('%')]
 
             m1 = request.args.get('m1')
             m2 = request.args.get('m2')
@@ -182,7 +203,7 @@ def compare():
                     )
                     inc = float(cur.fetchone()['total'])
                     cur.execute(
-                        "SELECT COALESCE(SUM(amount),0) AS total FROM archived_expense WHERE user_id=%s AND month=%s",
+                        "SELECT COALESCE(SUM(amount),0) AS total FROM archived_expense WHERE user_id=%s AND DATE_FORMAT(date, '%%Y-%%m')=%s",
                         (session['user_id'], month)
                     )
                     exp = float(cur.fetchone()['total'])
@@ -204,21 +225,21 @@ def compare():
                 """, (session['user_id'], m1, m2))
                 income = {r['month']: float(r['total']) for r in cur.fetchall()}
 
-                # Expense totals
+                # Expense totals - use actual expense date
                 cur.execute("""
-                    SELECT month, COALESCE(SUM(amount),0) AS total
+                    SELECT DATE_FORMAT(date, '%%Y-%%m') AS month, COALESCE(SUM(amount),0) AS total
                     FROM archived_expense
-                    WHERE user_id=%s AND month IN (%s,%s)
-                    GROUP BY month
+                    WHERE user_id=%s AND DATE_FORMAT(date, '%%Y-%%m') IN (%s,%s)
+                    GROUP BY DATE_FORMAT(date, '%%Y-%%m')
                 """, (session['user_id'], m1, m2))
                 expense = {r['month']: float(r['total']) for r in cur.fetchall()}
 
-                # Category breakdown
+                # Category breakdown - use actual expense date
                 cur.execute("""
-                    SELECT category, month, SUM(amount) AS total
+                    SELECT category, DATE_FORMAT(date, '%%Y-%%m') AS month, SUM(amount) AS total
                     FROM archived_expense
-                    WHERE user_id=%s AND month IN (%s,%s)
-                    GROUP BY category, month
+                    WHERE user_id=%s AND DATE_FORMAT(date, '%%Y-%%m') IN (%s,%s)
+                    GROUP BY category, DATE_FORMAT(date, '%%Y-%%m')
                 """, (session['user_id'], m1, m2))
 
                 cat_raw = cur.fetchall()
@@ -261,12 +282,18 @@ def compare():
                     },
                 }
 
+        # Create month options with display names
+        month_options = [(m, format_month(m)) for m in months]
+
         return render_template(
             "history/compare.html",
             months=months,
+            month_options=month_options,
             comparison=comparison,
             m1=m1,
             m2=m2,
+            m1_display=format_month(m1) if m1 else None,
+            m2_display=format_month(m2) if m2 else None,
             trend=trend,
         )
 

@@ -16,8 +16,8 @@
           class="h-10 border border-gray-300 dark:border-gray-700 dark:bg-[#1a1a1a]
                  dark:text-gray-200 rounded-lg shadow-sm px-3
                  focus:ring-[#0f8238] focus:border-[#0f8238] transition text-sm">
-          {% for m in months %}
-          <option value="{{ m }}" {% if m == selected_month %}selected{% endif %}>{{ m }}</option>
+          {% for value, display in month_options %}
+          <option value="{{ value }}" {% if value == selected_month %}selected{% endif %}>{{ display }}</option>
           {% endfor %}
         </select>
       </form>

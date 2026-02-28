@@ -22,8 +22,8 @@
         class="w-full h-11 bg-white dark:bg-[#222] text-gray-800 dark:text-gray-200
                border border-gray-300 dark:border-gray-600 rounded-lg px-4
                focus:outline-none focus:ring-2 focus:ring-[#0f8238] transition text-sm">
-        {% for m in months %}
-          <option value="{{ m }}" {% if m == m1 %}selected{% endif %}>{{ m }}</option>
+        {% for value, display in month_options %}
+          <option value="{{ value }}" {% if value == m1 %}selected{% endif %}>{{ display }}</option>
         {% endfor %}
       </select>
     </div>
@@ -34,8 +34,8 @@
         class="w-full h-11 bg-white dark:bg-[#222] text-gray-800 dark:text-gray-200
                border border-gray-300 dark:border-gray-600 rounded-lg px-4
                focus:outline-none focus:ring-2 focus:ring-[#0f8238] transition text-sm">
-        {% for m in months %}
-          <option value="{{ m }}" {% if m == m2 %}selected{% endif %}>{{ m }}</option>
+        {% for value, display in month_options %}
+          <option value="{{ value }}" {% if value == m2 %}selected{% endif %}>{{ display }}</option>
         {% endfor %}
       </select>
     </div>
