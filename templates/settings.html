@@ -1,180 +1,206 @@
 {% extends "base.html" %}
 {% block content %}
 
-<div class="w-full max-w-full mx-auto">
+<div class="w-full max-w-6xl mx-auto">
 
-  <div class="mb-6">
-    <h2 class="text-xl font-bold text-[#0f8238] dark:text-[#5bd68d]">Settings</h2>
-    <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Manage your budget limits, savings, and monthly cycle</p>
+  <!-- Header -->
+  <div class="flex items-center justify-between mb-8">
+    <div>
+      <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Settings</h2>
+      <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Manage your budget and monthly cycle</p>
+    </div>
+    <div class="flex items-center gap-2 text-sm">
+      <span class="px-3 py-1.5 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 rounded-full font-medium">
+        <i class="fas fa-archive mr-1"></i>{{ archived_months }} months archived
+      </span>
+    </div>
   </div>
 
-  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+  <!-- Bento Grid -->
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
 
-    <!-- LEFT: Current Month Snapshot -->
-    <div class="space-y-4">
+    <!-- Income Card (Large) -->
+    <div class="md:col-span-2 bg-gradient-to-br from-emerald-500 to-emerald-600 dark:from-emerald-600 dark:to-emerald-700
+                rounded-2xl p-6 text-white relative overflow-hidden min-h-[180px]">
+      <div class="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-10 -mt-10"></div>
+      <div class="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full -ml-8 -mb-8"></div>
 
-      <div class="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700
-                  rounded-lg p-5 shadow-sm transition">
-        <h3 class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-4">
-          Current Month
-        </h3>
-
-        <div class="space-y-4">
-          <!-- Active Income (based on mode) -->
-          <div class="flex items-center justify-between">
-            <div class="flex items-center gap-2">
-              <div class="w-8 h-8 rounded-full bg-green-50 dark:bg-green-900/20 flex items-center justify-center">
-                <i class="fas {% if use_automated_income %}fa-calculator{% else %}fa-arrow-down{% endif %} text-xs text-[#0f8238] dark:text-[#5bd68d]"></i>
-              </div>
-              <div>
-                <p class="text-xs text-gray-500 dark:text-gray-400">
-                  {% if use_automated_income %}Automated{% else %}Manual{% endif %} Income
-                  <span class="ml-1 text-[9px] px-1 py-0.5 bg-[#0f8238] text-white rounded">ACTIVE</span>
-                </p>
-                <p class="text-sm font-semibold text-gray-800 dark:text-gray-200">Rs. {{ month_income | round(2) }}</p>
-              </div>
-            </div>
-            <span class="text-xs text-gray-400 dark:text-gray-500">
-              {% if use_automated_income %}from expenses{% else %}{{ income_count }} item{{ 's' if income_count != 1 }}{% endif %}
-            </span>
+      <div class="relative">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+            <i class="fas {% if use_automated_income %}fa-calculator{% else %}fa-coins{% endif %} text-lg"></i>
           </div>
-
-          <!-- Secondary Income (inactive) -->
-          <div class="flex items-center justify-between opacity-60">
-            <div class="flex items-center gap-2">
-              <div class="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-                <i class="fas {% if use_automated_income %}fa-arrow-down{% else %}fa-calculator{% endif %} text-xs text-gray-400 dark:text-gray-500"></i>
-              </div>
-              <div>
-                <p class="text-xs text-gray-500 dark:text-gray-400">
-                  {% if use_automated_income %}Manual{% else %}Automated{% endif %} Income
-                </p>
-                <p class="text-sm font-semibold text-gray-400 dark:text-gray-500">
-                  Rs. {% if use_automated_income %}{{ month_manual_income | round(2) }}{% else %}{{ month_automated_income | round(2) }}{% endif %}
-                </p>
-              </div>
-            </div>
-            <span class="text-xs text-gray-400 dark:text-gray-500">inactive</span>
-          </div>
-
-          <!-- Expenses -->
-          <div class="flex items-center justify-between">
-            <div class="flex items-center gap-2">
-              <div class="w-8 h-8 rounded-full bg-orange-50 dark:bg-orange-900/20 flex items-center justify-center">
-                <i class="fas fa-arrow-up text-xs text-[#f3703f] dark:text-[#ff9966]"></i>
-              </div>
-              <div>
-                <p class="text-xs text-gray-500 dark:text-gray-400">Expenses</p>
-                <p class="text-sm font-semibold text-gray-800 dark:text-gray-200">Rs. {{ month_expenses | round(2) }}</p>
-              </div>
-            </div>
-            <span class="text-xs text-gray-400 dark:text-gray-500">{{ expense_count }} item{{ 's' if expense_count != 1 }}</span>
-          </div>
-
-          <!-- Divider -->
-          <div class="border-t border-gray-200 dark:border-gray-700"></div>
-
-          <!-- Net -->
-          <div class="flex items-center justify-between">
-            <div class="flex items-center gap-2">
-              <div class="w-8 h-8 rounded-full
-                          {% if month_net >= 0 %}bg-green-50 dark:bg-green-900/20{% else %}bg-red-50 dark:bg-red-900/20{% endif %}
-                          flex items-center justify-center">
-                <i class="fas fa-wallet text-xs
-                          {% if month_net >= 0 %}text-[#0f8238] dark:text-[#5bd68d]{% else %}text-red-500{% endif %}"></i>
-              </div>
-              <div>
-                <p class="text-xs text-gray-500 dark:text-gray-400">Net Savings</p>
-                <p class="text-sm font-bold {% if month_net >= 0 %}text-[#0f8238] dark:text-[#5bd68d]{% else %}text-red-500{% endif %}">
-                  Rs. {{ month_net | round(2) }}
-                </p>
-              </div>
-            </div>
+          <div>
+            <p class="text-emerald-100 text-sm">
+              {% if use_automated_income %}Automated{% else %}Manual{% endif %} Income
+            </p>
+            <span class="text-xs bg-white/20 px-2 py-0.5 rounded-full">Active</span>
           </div>
         </div>
-      </div>
 
-      <!-- Quick Stats -->
-      <div class="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700
-                  rounded-lg p-5 shadow-sm transition">
-        <h3 class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-3">
-          Overview
-        </h3>
-        <div class="space-y-3 text-sm">
-          <div class="flex justify-between">
-            <span class="text-gray-500 dark:text-gray-400">Monthly Limit</span>
-            <span class="font-semibold text-gray-800 dark:text-gray-200">Rs. {{ current_limit | round(2) }}</span>
-          </div>
-          <div class="flex justify-between">
-            <span class="text-gray-500 dark:text-gray-400">Total Savings</span>
-            <span class="font-semibold text-[#6466f1] dark:text-[#8f90ff]">Rs. {{ total_savings | round(2) }}</span>
-          </div>
-          <div class="flex justify-between">
-            <span class="text-gray-500 dark:text-gray-400">Archived Months</span>
-            <span class="font-semibold text-gray-800 dark:text-gray-200">{{ archived_months }}</span>
-          </div>
-          {% if current_limit > 0 %}
-          <div class="flex justify-between">
-            <span class="text-gray-500 dark:text-gray-400">Limit Used</span>
-            <span class="font-semibold {% if month_expenses > current_limit %}text-red-500{% else %}text-gray-800 dark:text-gray-200{% endif %}">
-              {{ ((month_expenses / current_limit) * 100) | round(1) }}%
-            </span>
-          </div>
-          <div class="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-            <div class="h-full rounded-full transition-all duration-500
-                        {% if month_expenses > current_limit %}bg-red-500{% else %}bg-[#0f8238] dark:bg-[#5bd68d]{% endif %}"
-                 style="width: {{ [((month_expenses / current_limit) * 100), 100] | min }}%;"></div>
-          </div>
-          {% endif %}
+        <p class="text-4xl font-bold mb-2">Rs. {{ month_income | round(0) | int | default(0) }}</p>
+        <p class="text-emerald-100 text-sm">
+          {% if use_automated_income %}Calculated from {{ expense_count }} expenses{% else %}{{ income_count }} income source{{ 's' if income_count != 1 }}{% endif %}
+        </p>
+
+        <div class="mt-4 pt-4 border-t border-white/20">
+          <p class="text-emerald-100 text-xs">{{ 'Manual' if use_automated_income else 'Automated' }} (inactive)</p>
+          <p class="text-xl font-semibold text-white/70">
+            Rs. {% if use_automated_income %}{{ month_manual_income | round(0) | int }}{% else %}{{ month_automated_income | round(0) | int }}{% endif %}
+          </p>
         </div>
       </div>
-
     </div>
 
-    <!-- RIGHT: Forms -->
-    <div class="lg:col-span-2 space-y-6">
+    <!-- Expenses Card -->
+    <div class="bg-gradient-to-br from-orange-500 to-rose-500 dark:from-orange-600 dark:to-rose-600
+                rounded-2xl p-6 text-white relative overflow-hidden min-h-[180px]">
+      <div class="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -mr-6 -mt-6"></div>
 
-      <!-- Update Budget Form -->
-      <form method="POST" action="{{ url_for('settings.update_limit') }}"
-            class="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700
-                   rounded-lg p-6 shadow-sm transition">
+      <div class="relative">
+        <div class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center mb-4">
+          <i class="fas fa-shopping-cart text-lg"></i>
+        </div>
+
+        <p class="text-orange-100 text-xs uppercase tracking-wider mb-1">Expenses</p>
+        <p class="text-3xl font-bold">Rs. {{ month_expenses | round(0) | int | default(0) }}</p>
+        <p class="text-orange-100 text-sm mt-2">{{ expense_count }} transaction{{ 's' if expense_count != 1 }}</p>
+      </div>
+    </div>
+
+    <!-- Net Savings Card -->
+    <div class="{% if month_net >= 0 %}bg-gradient-to-br from-blue-500 to-indigo-600 dark:from-blue-600 dark:to-indigo-700{% else %}bg-gradient-to-br from-red-500 to-pink-600{% endif %}
+                rounded-2xl p-6 text-white relative overflow-hidden min-h-[180px]">
+      <div class="absolute bottom-0 right-0 w-20 h-20 bg-white/10 rounded-full -mr-6 -mb-6"></div>
+
+      <div class="relative">
+        <div class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center mb-4">
+          <i class="fas fa-piggy-bank text-lg"></i>
+        </div>
+
+        <p class="{% if month_net >= 0 %}text-blue-100{% else %}text-red-100{% endif %} text-xs uppercase tracking-wider mb-1">Net This Month</p>
+        <p class="text-3xl font-bold">{% if month_net >= 0 %}+{% endif %}{{ month_net | round(0) | int }}</p>
+        <p class="{% if month_net >= 0 %}text-blue-100{% else %}text-red-100{% endif %} text-sm mt-2">
+          {% if month_net >= 0 %}Surplus{% else %}Deficit{% endif %}
+        </p>
+      </div>
+    </div>
+
+    <!-- Row: Total Savings, Monthly Limit, Budget Settings -->
+    <div class="md:col-span-2 lg:col-span-4 flex flex-col lg:flex-row gap-5">
+
+      <!-- Total Savings Card -->
+      <div class="lg:w-[20%] bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-800 rounded-2xl p-5 flex flex-col">
+      <div class="flex items-center gap-2 mb-3">
+        <div class="w-9 h-9 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg flex items-center justify-center">
+          <i class="fas fa-wallet text-indigo-600 dark:text-indigo-400 text-sm"></i>
+        </div>
+        <p class="text-gray-500 dark:text-gray-400 text-[10px] uppercase tracking-wider font-medium">Total Savings</p>
+      </div>
+      <p class="text-xl font-bold text-indigo-600 dark:text-indigo-400 truncate">Rs. {{ "{:,.0f}".format(total_savings) }}</p>
+      <p class="text-gray-400 dark:text-gray-500 text-xs mt-1">Lifetime accumulated</p>
+
+      <div class="mt-auto pt-3 border-t border-gray-100 dark:border-gray-800 mt-3">
+        <div class="flex justify-between text-xs mb-1.5">
+          <span class="text-gray-500 dark:text-gray-400">After month</span>
+          <span class="font-semibold {% if month_net >= 0 %}text-emerald-600 dark:text-emerald-400{% else %}text-red-500{% endif %}">
+            {{ "{:,.0f}".format(total_savings + month_net) }}
+          </span>
+        </div>
+        <div class="flex justify-between text-xs">
+          <span class="text-gray-500 dark:text-gray-400">Change</span>
+          <span class="font-semibold {% if month_net >= 0 %}text-emerald-600 dark:text-emerald-400{% else %}text-red-500{% endif %}">
+            {% if month_net >= 0 %}+{% endif %}{{ "{:,.0f}".format(month_net) }}
+          </span>
+        </div>
+      </div>
+    </div>
+
+      <!-- Monthly Limit Card -->
+      <div class="lg:w-[20%] bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-800 rounded-2xl p-5 flex flex-col">
+      <div class="flex items-center gap-2 mb-3">
+        <div class="w-9 h-9 bg-amber-100 dark:bg-amber-900/30 rounded-lg flex items-center justify-center">
+          <i class="fas fa-tachometer-alt text-amber-600 dark:text-amber-400 text-sm"></i>
+        </div>
+        <p class="text-gray-500 dark:text-gray-400 text-[10px] uppercase tracking-wider font-medium">Monthly Limit</p>
+      </div>
+      <p class="text-xl font-bold text-gray-900 dark:text-white truncate">Rs. {{ "{:,.0f}".format(current_limit) }}</p>
+      {% if current_limit > 0 %}
+      <div class="mt-3">
+        <div class="flex justify-between text-xs mb-1.5">
+          <span class="text-gray-400">Used</span>
+          <span class="{% if month_expenses > current_limit %}text-red-500{% else %}text-gray-600 dark:text-gray-300{% endif %} font-medium">
+            {{ ((month_expenses / current_limit) * 100) | round(0) }}%
+          </span>
+        </div>
+        <div class="h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+          <div class="h-full rounded-full transition-all {% if month_expenses > current_limit %}bg-red-500{% else %}bg-amber-500{% endif %}"
+               style="width: {{ [((month_expenses / current_limit) * 100), 100] | min }}%"></div>
+        </div>
+      </div>
+
+      <div class="mt-auto pt-3 border-t border-gray-100 dark:border-gray-800 mt-3">
+        <div class="flex justify-between text-xs mb-1.5">
+          <span class="text-gray-500 dark:text-gray-400">Spent</span>
+          <span class="font-semibold text-orange-500">{{ "{:,.0f}".format(month_expenses) }}</span>
+        </div>
+        <div class="flex justify-between text-xs">
+          <span class="text-gray-500 dark:text-gray-400">Remaining</span>
+          <span class="font-semibold {% if (current_limit - month_expenses) >= 0 %}text-emerald-600 dark:text-emerald-400{% else %}text-red-500{% endif %}">
+            {{ "{:,.0f}".format(current_limit - month_expenses) }}
+          </span>
+        </div>
+      </div>
+      {% else %}
+      <p class="text-gray-400 dark:text-gray-500 text-xs mt-1">No limit set</p>
+      {% endif %}
+    </div>
+
+      <!-- Budget Settings Form (Wide) -->
+      <div class="lg:w-[60%] bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-800 rounded-2xl p-6">
+      <form method="POST" action="{{ url_for('settings.update_limit') }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
-        <h3 class="text-base font-semibold text-gray-800 dark:text-gray-200 mb-4">
-          <i class="fas fa-sliders-h mr-2 text-[#0f8238] dark:text-[#5bd68d]"></i>
-          Budget Settings
-        </h3>
+        <div class="flex items-center justify-between mb-6">
+          <div class="flex items-center gap-3">
+            <div class="w-12 h-12 bg-emerald-100 dark:bg-emerald-900/30 rounded-xl flex items-center justify-center">
+              <i class="fas fa-sliders-h text-emerald-600 dark:text-emerald-400 text-lg"></i>
+            </div>
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Budget Settings</h3>
+          </div>
+          <button type="submit"
+                  class="w-11 h-11 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-medium transition flex items-center justify-center">
+            <i class="fas fa-check"></i>
+          </button>
+        </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-6">
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Monthly Expense Limit (Rs)
-            </label>
-            <input type="number" step="0.01" name="limit" required value="{{ current_limit }}"
-                   class="w-full h-11 border border-gray-300 dark:border-gray-700
-                          dark:bg-[#222] dark:text-gray-200 rounded-lg px-4 shadow-sm text-sm
-                          focus:ring-[#0f8238] focus:border-[#0f8238] transition">
+            <label class="block text-xs text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wider">Monthly Limit</label>
+            <div class="relative">
+              <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm">Rs.</span>
+              <input type="number" step="0.01" name="limit" required value="{{ current_limit }}"
+                     class="w-full h-12 pl-12 pr-4 bg-gray-50 dark:bg-[#0d0d0d] border border-gray-200 dark:border-gray-800
+                            rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition">
+            </div>
           </div>
 
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Current Total Savings (Rs)
-            </label>
-            <input type="number" step="0.01" name="savings" required value="{{ total_savings }}"
-                   class="w-full h-11 border border-gray-300 dark:border-gray-700
-                          dark:bg-[#222] dark:text-gray-200 rounded-lg px-4 shadow-sm text-sm
-                          focus:ring-[#0f8238] focus:border-[#0f8238] transition">
+            <label class="block text-xs text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wider">Total Savings</label>
+            <div class="relative">
+              <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm">Rs.</span>
+              <input type="number" step="0.01" name="savings" required value="{{ total_savings }}"
+                     class="w-full h-12 pl-12 pr-4 bg-gray-50 dark:bg-[#0d0d0d] border border-gray-200 dark:border-gray-800
+                            rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition">
+            </div>
           </div>
 
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Default Expense Done By
-            </label>
+            <label class="block text-xs text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wider">Default Done By</label>
             <select name="default_done_by"
-                    class="w-full h-11 border border-gray-300 dark:border-gray-700
-                           dark:bg-[#222] dark:text-gray-200 rounded-lg px-4 shadow-sm text-sm
-                           focus:ring-[#0f8238] focus:border-[#0f8238]">
-              <option value="">-- No Default --</option>
+                    class="w-full h-12 px-4 bg-gray-50 dark:bg-[#0d0d0d] border border-gray-200 dark:border-gray-800
+                           rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition">
+              <option value="">None</option>
               <option value="Faisal" {% if default_done_by == "Faisal" %}selected{% endif %}>Faisal</option>
               <option value="Hassan" {% if default_done_by == "Hassan" %}selected{% endif %}>Hassan</option>
               <option value="Faran" {% if default_done_by == "Faran" %}selected{% endif %}>Faran</option>
@@ -183,142 +209,118 @@
         </div>
 
         <!-- Income Mode Toggle -->
-        <div class="mt-5 p-4 bg-gray-50 dark:bg-[#222] rounded-lg border border-gray-200 dark:border-gray-700">
-          <div class="flex items-center justify-between">
-            <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Income Mode
-              </label>
-              <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                {% if use_automated_income %}
-                Automated: Income is calculated from expenses by "Done By" field
-                {% else %}
-                Manual: You enter income sources manually
-                {% endif %}
-              </p>
-            </div>
-            <div class="flex items-center gap-3">
-              <span class="text-xs {% if not use_automated_income %}font-semibold text-[#0f8238] dark:text-[#5bd68d]{% else %}text-gray-400{% endif %}">Manual</span>
-              <label class="relative inline-flex items-center cursor-pointer">
-                <input type="checkbox" name="use_automated_income" value="1"
-                       {% if use_automated_income %}checked{% endif %}
-                       class="sr-only peer">
-                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2
-                            peer-focus:ring-[#0f8238] dark:peer-focus:ring-[#5bd68d]
-                            rounded-full peer dark:bg-gray-700
-                            peer-checked:after:translate-x-full peer-checked:after:border-white
-                            after:content-[''] after:absolute after:top-[2px] after:left-[2px]
-                            after:bg-white after:border-gray-300 after:border after:rounded-full
-                            after:h-5 after:w-5 after:transition-all dark:border-gray-600
-                            peer-checked:bg-[#0f8238] dark:peer-checked:bg-[#5bd68d]"></div>
-              </label>
-              <span class="text-xs {% if use_automated_income %}font-semibold text-[#0f8238] dark:text-[#5bd68d]{% else %}text-gray-400{% endif %}">Automated</span>
-            </div>
+        <div class="flex items-center justify-between p-5 bg-gray-50 dark:bg-[#0d0d0d] rounded-xl">
+          <div>
+            <p class="text-sm font-medium text-gray-900 dark:text-white">Income Mode</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              {{ 'Auto-calculated from expenses' if use_automated_income else 'Manually entered sources' }}
+            </p>
+          </div>
+          <div class="flex items-center gap-3">
+            <span class="text-xs font-medium {% if not use_automated_income %}text-emerald-600 dark:text-emerald-400{% else %}text-gray-400{% endif %}">Manual</span>
+            <label class="relative inline-flex items-center cursor-pointer">
+              <input type="checkbox" name="use_automated_income" value="1" {% if use_automated_income %}checked{% endif %} class="sr-only peer">
+              <div class="w-11 h-6 bg-gray-300 dark:bg-gray-700 rounded-full peer
+                          peer-checked:bg-emerald-500 peer-focus:ring-2 peer-focus:ring-emerald-500/20
+                          after:content-[''] after:absolute after:top-0.5 after:left-0.5
+                          after:bg-white after:rounded-full after:h-5 after:w-5
+                          after:transition-all peer-checked:after:translate-x-5"></div>
+            </label>
+            <span class="text-xs font-medium {% if use_automated_income %}text-emerald-600 dark:text-emerald-400{% else %}text-gray-400{% endif %}">Auto</span>
           </div>
         </div>
-
-        <button type="submit"
-                class="mt-5 bg-[#0f8238] text-white px-5 py-2.5 rounded-lg shadow-sm
-                       hover:bg-green-700 transition font-medium text-sm">
-          <i class="fas fa-save mr-1"></i> Save Changes
-        </button>
 
       </form>
+    </div>
 
-      <!-- End Month -->
-      <div class="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700
-                  rounded-lg p-6 shadow-sm transition">
+    </div> <!-- Close flex wrapper for Total Savings, Monthly Limit, Budget Settings -->
 
-        <h3 class="text-base font-semibold text-gray-800 dark:text-gray-200 mb-2">
-          <i class="fas fa-calendar-check mr-2 text-blue-600 dark:text-blue-400"></i>
-          End This Month
-        </h3>
-        <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
-          Archives current income &amp; expenses, adds net savings to your total, and clears the month.
-        </p>
+    <!-- End Month Card (Full Width) -->
+    <div class="md:col-span-2 lg:col-span-4 bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-slate-800 dark:to-slate-900
+                rounded-2xl p-6 relative overflow-hidden border border-blue-200 dark:border-transparent">
+      <div class="absolute top-0 right-0 w-40 h-40 bg-blue-200/30 dark:bg-white/5 rounded-full -mr-16 -mt-16"></div>
+      <div class="absolute bottom-0 left-1/2 w-32 h-32 bg-indigo-200/30 dark:bg-white/5 rounded-full -mb-16"></div>
 
-        <!-- Preview of what will be archived -->
-        {% if income_count > 0 or expense_count > 0 %}
-        <div class="bg-gray-50 dark:bg-[#222] rounded-lg p-4 mb-4 text-sm">
-          <p class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-2">
-            Will be archived
-          </p>
-          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div>
-              <p class="text-xs text-gray-400 dark:text-gray-500">
-                {% if use_automated_income %}Automated{% else %}Manual{% endif %} Income
-              </p>
-              <p class="font-semibold text-[#0f8238] dark:text-[#5bd68d]">Rs. {{ month_income | round(2) }}</p>
+      <div class="relative">
+        <form method="POST" action="{{ url_for('settings.end_month') }}"
+              onsubmit="return confirm('Archive this month? All data will be moved to history.')">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+          <div class="flex items-center justify-between mb-5">
+            <div class="flex items-center gap-3">
+              <div class="w-12 h-12 bg-blue-500 dark:bg-white/10 rounded-xl flex items-center justify-center">
+                <i class="fas fa-calendar-check text-lg text-white"></i>
+              </div>
+              <div>
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">End This Month</h3>
+                <p class="text-gray-500 dark:text-slate-400 text-sm">Archive and start fresh</p>
+              </div>
             </div>
-            <div>
-              <p class="text-xs text-gray-400 dark:text-gray-500">
-                {% if use_automated_income %}Manual{% else %}Automated{% endif %} (Ref)
-              </p>
-              <p class="font-semibold text-gray-400 dark:text-gray-500">
-                Rs. {% if use_automated_income %}{{ month_manual_income | round(2) }}{% else %}{{ month_automated_income | round(2) }}{% endif %}
-              </p>
+            <button type="submit"
+                    class="w-11 h-11 bg-blue-600 hover:bg-blue-700 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 rounded-xl font-semibold transition
+                           disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center"
+                    {% if income_count == 0 and expense_count == 0 %}disabled{% endif %}>
+              <i class="fas fa-archive"></i>
+            </button>
+          </div>
+
+          {% if income_count > 0 or expense_count > 0 %}
+          <div class="grid grid-cols-4 gap-4 p-5 bg-white/60 dark:bg-white/5 rounded-xl border border-blue-100 dark:border-transparent">
+            <div class="text-center">
+              <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ month_income | round(0) | int }}</p>
+              <p class="text-gray-500 dark:text-slate-400 text-xs uppercase tracking-wider mt-1">Income</p>
             </div>
-            <div>
-              <p class="text-xs text-gray-400 dark:text-gray-500">Expenses</p>
-              <p class="font-semibold text-[#f3703f] dark:text-[#ff9966]">Rs. {{ month_expenses | round(2) }}</p>
+            <div class="text-center border-l border-blue-200 dark:border-white/10">
+              <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ month_expenses | round(0) | int }}</p>
+              <p class="text-gray-500 dark:text-slate-400 text-xs uppercase tracking-wider mt-1">Expenses</p>
             </div>
-            <div>
-              <p class="text-xs text-gray-400 dark:text-gray-500">Net added to savings</p>
-              <p class="font-semibold {% if month_net >= 0 %}text-[#0f8238] dark:text-[#5bd68d]{% else %}text-red-500{% endif %}">
-                Rs. {{ month_net | round(2) }}
+            <div class="text-center border-l border-blue-200 dark:border-white/10">
+              <p class="text-2xl font-bold {% if month_net >= 0 %}text-emerald-600 dark:text-emerald-400{% else %}text-red-500 dark:text-red-400{% endif %}">
+                {% if month_net >= 0 %}+{% endif %}{{ month_net | round(0) | int }}
               </p>
+              <p class="text-gray-500 dark:text-slate-400 text-xs uppercase tracking-wider mt-1">Net</p>
+            </div>
+            <div class="text-center border-l border-blue-200 dark:border-white/10">
+              <p class="text-2xl font-bold text-indigo-600 dark:text-indigo-400">{{ (total_savings + month_net) | round(0) | int }}</p>
+              <p class="text-gray-500 dark:text-slate-400 text-xs uppercase tracking-wider mt-1">New Total</p>
             </div>
           </div>
-          <p class="text-xs text-gray-400 dark:text-gray-500 mt-2">
-            New total savings will be: <strong class="text-gray-700 dark:text-gray-300">Rs. {{ (total_savings + month_net) | round(2) }}</strong>
-          </p>
-        </div>
-        {% endif %}
-
-        <form method="POST" action="{{ url_for('settings.end_month') }}"
-              onsubmit="return confirm('Archive this month? Income and expenses will be moved to history and cleared.')">
-          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-          <button type="submit"
-                  class="w-full bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-400
-                         text-white px-5 py-2.5 rounded-lg shadow-sm transition font-medium text-sm
-                         {% if income_count == 0 and expense_count == 0 %}opacity-50 cursor-not-allowed{% endif %}"
-                  {% if income_count == 0 and expense_count == 0 %}disabled{% endif %}>
-            <i class="fas fa-archive mr-1"></i>
-            Archive &amp; End Month
-          </button>
+          {% else %}
+          <p class="text-gray-400 dark:text-slate-500 text-sm">No data to archive this month</p>
+          {% endif %}
         </form>
-
-        {% if income_count == 0 and expense_count == 0 %}
-        <p class="text-xs text-gray-400 dark:text-gray-500 mt-2 text-center">Nothing to archive this month</p>
-        {% endif %}
       </div>
+    </div>
 
-      <!-- Fresh Start -->
+    <!-- Danger Zone -->
+    <div class="md:col-span-2 lg:col-span-4 bg-white dark:bg-[#1a1a1a] border-2 border-dashed border-red-200 dark:border-red-900/50 rounded-2xl p-6">
       <form method="POST" action="{{ url_for('settings.fresh_start') }}"
-            onsubmit="return confirm('This will PERMANENTLY delete all data including archived history, income, expenses, and settings. This cannot be undone. Are you sure?')"
-            class="bg-white dark:bg-[#1a1a1a] border border-red-200 dark:border-red-800/40
-                   rounded-lg p-6 shadow-sm transition">
+            onsubmit="return confirm('DELETE EVERYTHING? This cannot be undone!')">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
-        <h3 class="text-base font-semibold text-red-600 dark:text-red-400 mb-2">
-          <i class="fas fa-exclamation-triangle mr-2"></i>
-          Fresh Start
-        </h3>
-        <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
-          Permanently deletes <strong>everything</strong>: income, expenses, savings, limits, and all archived history.
-          This cannot be undone.
-        </p>
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-4">
+            <div class="w-12 h-12 bg-red-100 dark:bg-red-900/30 rounded-xl flex items-center justify-center flex-shrink-0">
+              <i class="fas fa-exclamation-triangle text-red-500 dark:text-red-400 text-lg"></i>
+            </div>
+            <div>
+              <h3 class="text-base font-semibold text-red-600 dark:text-red-400">Fresh Start</h3>
+              <p class="text-sm text-gray-500 dark:text-gray-400">Permanently delete everything and reset</p>
+            </div>
+          </div>
+          <button type="submit"
+                  class="w-11 h-11 border-2 border-red-300 dark:border-red-800 text-red-600 dark:text-red-400 rounded-xl font-medium
+                         hover:bg-red-600 hover:text-white hover:border-red-600 transition flex items-center justify-center">
+            <i class="fas fa-trash"></i>
+          </button>
+        </div>
 
-        <button type="submit"
-                class="w-full border border-red-300 dark:border-red-700 text-red-600 dark:text-red-400
-                       hover:bg-red-600 hover:text-white hover:border-red-600
-                       dark:hover:bg-red-600 dark:hover:text-white dark:hover:border-red-600
-                       px-5 py-2.5 rounded-lg shadow-sm transition font-medium text-sm">
-          <i class="fas fa-trash mr-1"></i> Delete Everything &amp; Reset
-        </button>
-
+        <div class="mt-4 pt-4 border-t border-red-100 dark:border-red-900/30">
+          <p class="text-xs text-gray-400 dark:text-gray-500">
+            This will permanently delete all income, expenses, archived history, savings, and settings. This action cannot be undone.
+          </p>
+        </div>
       </form>
-
     </div>
 
   </div>
