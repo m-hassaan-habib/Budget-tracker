@@ -22,14 +22,14 @@ def index():
     conn = current_app.db_pool.get_connection()
     try:
         with conn.cursor(dictionary=True) as cur:
-            # Get all archived months based on actual expense dates
+            # Get all archived months based on archive month (when data was archived)
             cur.execute("""
                 SELECT month FROM archived_income WHERE user_id=%s
                 UNION
-                SELECT DATE_FORMAT(date, '%%Y-%%m') AS month FROM archived_expense WHERE user_id=%s AND date IS NOT NULL
+                SELECT month FROM archived_expense WHERE user_id=%s
                 ORDER BY month DESC
             """, (session['user_id'], session['user_id']))
-            months = [row['month'] for row in cur.fetchall() if row['month'] and not row['month'].startswith('%')]
+            months = [row['month'] for row in cur.fetchall() if row['month']]
 
             selected_month = request.args.get('month') or (months[0] if months else None)
             category_filter = request.args.get('category', '')
@@ -58,21 +58,21 @@ def index():
                 total_income_month = sum(i["amount"] for i in archived_income)
 
                 # Actual Income (calculated from archived expenses grouped by done_by)
-                # Filter by the actual expense date, not the archive month
+                # Filter by archive month (when the data was archived)
                 cur.execute("""
                     SELECT done_by, SUM(amount) AS total
                     FROM archived_expense
-                    WHERE DATE_FORMAT(date, '%%Y-%%m')=%s AND user_id=%s
+                    WHERE month=%s AND user_id=%s
                     GROUP BY done_by
                 """, (selected_month, session['user_id']))
                 actual_income_by_person = {row['done_by']: float(row['total']) for row in cur.fetchall()}
                 total_actual_income_month = sum(actual_income_by_person.values())
 
-                # Expenses - filter by actual expense date
+                # Expenses - filter by archive month (when the data was archived)
                 expense_query = """
                     SELECT id, amount, category, note, date, done_by
                     FROM archived_expense
-                    WHERE DATE_FORMAT(date, '%%Y-%%m')=%s AND user_id=%s
+                    WHERE month=%s AND user_id=%s
                 """
                 expense_params = [selected_month, session['user_id']]
 
@@ -95,18 +95,18 @@ def index():
                     for r in cur.fetchall()
                 ]
 
-                # Total expenses - filter by actual expense date
+                # Total expenses - filter by archive month
                 cur.execute(
-                    "SELECT COALESCE(SUM(amount),0) AS total FROM archived_expense WHERE DATE_FORMAT(date, '%%Y-%%m')=%s AND user_id=%s",
+                    "SELECT COALESCE(SUM(amount),0) AS total FROM archived_expense WHERE month=%s AND user_id=%s",
                     (selected_month, session['user_id'])
                 )
                 total_expense_month = float(cur.fetchone()['total'])
 
-                # Category breakdown - filter by actual expense date
+                # Category breakdown - filter by archive month
                 cur.execute("""
                     SELECT category, SUM(amount) AS total, COUNT(*) AS count
                     FROM archived_expense
-                    WHERE DATE_FORMAT(date, '%%Y-%%m')=%s AND user_id=%s
+                    WHERE month=%s AND user_id=%s
                     GROUP BY category
                     ORDER BY total DESC
                 """, (selected_month, session['user_id']))
@@ -183,10 +183,10 @@ def compare():
             cur.execute("""
                 SELECT DISTINCT month FROM archived_income WHERE user_id=%s
                 UNION
-                SELECT DISTINCT DATE_FORMAT(date, '%%Y-%%m') AS month FROM archived_expense WHERE user_id=%s AND date IS NOT NULL
+                SELECT DISTINCT month FROM archived_expense WHERE user_id=%s
                 ORDER BY month DESC
             """, (session['user_id'], session['user_id']))
-            months = [r['month'] for r in cur.fetchall() if r['month'] and not r['month'].startswith('%')]
+            months = [r['month'] for r in cur.fetchall() if r['month']]
 
             m1 = request.args.get('m1')
             m2 = request.args.get('m2')
@@ -203,7 +203,7 @@ def compare():
                     )
                     inc = float(cur.fetchone()['total'])
                     cur.execute(
-                        "SELECT COALESCE(SUM(amount),0) AS total FROM archived_expense WHERE user_id=%s AND DATE_FORMAT(date, '%%Y-%%m')=%s",
+                        "SELECT COALESCE(SUM(amount),0) AS total FROM archived_expense WHERE user_id=%s AND month=%s",
                         (session['user_id'], month)
                     )
                     exp = float(cur.fetchone()['total'])
@@ -225,21 +225,21 @@ def compare():
                 """, (session['user_id'], m1, m2))
                 income = {r['month']: float(r['total']) for r in cur.fetchall()}
 
-                # Expense totals - use actual expense date
+                # Expense totals - use archive month
                 cur.execute("""
-                    SELECT DATE_FORMAT(date, '%%Y-%%m') AS month, COALESCE(SUM(amount),0) AS total
+                    SELECT month, COALESCE(SUM(amount),0) AS total
                     FROM archived_expense
-                    WHERE user_id=%s AND DATE_FORMAT(date, '%%Y-%%m') IN (%s,%s)
-                    GROUP BY DATE_FORMAT(date, '%%Y-%%m')
+                    WHERE user_id=%s AND month IN (%s,%s)
+                    GROUP BY month
                 """, (session['user_id'], m1, m2))
                 expense = {r['month']: float(r['total']) for r in cur.fetchall()}
 
-                # Category breakdown - use actual expense date
+                # Category breakdown - use archive month
                 cur.execute("""
-                    SELECT category, DATE_FORMAT(date, '%%Y-%%m') AS month, SUM(amount) AS total
+                    SELECT category, month, SUM(amount) AS total
                     FROM archived_expense
-                    WHERE user_id=%s AND DATE_FORMAT(date, '%%Y-%%m') IN (%s,%s)
-                    GROUP BY category, DATE_FORMAT(date, '%%Y-%%m')
+                    WHERE user_id=%s AND month IN (%s,%s)
+                    GROUP BY category, month
                 """, (session['user_id'], m1, m2))
 
                 cat_raw = cur.fetchall()

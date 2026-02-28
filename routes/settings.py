@@ -130,8 +130,14 @@ def update_limit():
 @settings_bp.route('/end-month', methods=['POST'])
 @login_required
 def end_month():
+    # Use the previous month since we're archiving last month's data
     now = datetime.now()
-    month_str = now.strftime("%Y-%m")
+    # Calculate previous month (handle January -> December of previous year)
+    if now.month == 1:
+        previous_month = now.replace(year=now.year - 1, month=12, day=1)
+    else:
+        previous_month = now.replace(month=now.month - 1, day=1)
+    month_str = previous_month.strftime("%Y-%m")
 
     conn = current_app.db_pool.get_connection()
     try:
