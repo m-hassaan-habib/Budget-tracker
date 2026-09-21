@@ -1,0 +1,170 @@
+{# Always-visible entry bar. Submits with fetch so recording ten expenses in a
+   row costs zero page loads, and keeps the date and person between entries --
+   catching up on three days of spending shouldn't mean setting the date eight
+   times. #}
+<div class="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700
+            rounded-xl p-4 shadow-sm mb-6 transition">
+
+  <div class="flex items-center justify-between mb-3">
+    <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300">
+      <i class="fas fa-bolt text-[#0f8238] dark:text-[#5bd68d] mr-1.5"></i>Quick add
+    </h3>
+    <a href="{{ url_for('expenses.add_expense') }}"
+       class="text-xs text-gray-400 hover:text-[#0f8238] dark:hover:text-[#5bd68d] transition">
+      More details (receipt) <i class="fas fa-arrow-right fa-xs ml-0.5"></i>
+    </a>
+  </div>
+
+  {% if top_categories %}
+  <div class="flex flex-wrap gap-1.5 mb-3" id="quickChips">
+    {% for cat in top_categories %}
+    <button type="button" class="js-chip px-2.5 py-1 text-xs rounded-full border
+                   border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300
+                   hover:border-[#0f8238] hover:text-[#0f8238] dark:hover:text-[#5bd68d] transition"
+            data-category="{{ cat.name }}">
+      <i class="{{ cat.icon }}" style="color:{{ cat.color }}"></i>
+      <span class="ml-1">{{ cat.name }}</span>
+    </button>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <form id="quickAddForm" class="grid grid-cols-2 sm:grid-cols-12 gap-2 items-center">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <div class="col-span-1 sm:col-span-2">
+      <input type="number" name="amount" step="0.01" min="0" required autofocus
+             placeholder="Amount"
+             class="w-full h-11 border border-gray-300 dark:border-gray-600 bg-white dark:bg-[#222]
+                    text-gray-900 dark:text-gray-100 rounded-lg px-3 text-sm
+                    focus:ring-2 focus:ring-[#0f8238] focus:border-[#0f8238] transition">
+    </div>
+
+    <div class="col-span-1 sm:col-span-3">
+      <select name="category" id="quickCategory" required
+              class="w-full h-11 border border-gray-300 dark:border-gray-600 bg-white dark:bg-[#222]
+                     text-gray-900 dark:text-gray-100 rounded-lg px-3 text-sm
+                     focus:ring-2 focus:ring-[#0f8238] focus:border-[#0f8238] transition">
+        <option value="" disabled selected>Category</option>
+        {% for cat in categories %}
+        <option value="{{ cat.name }}">{{ cat.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="col-span-1 sm:col-span-2">
+      <select name="done_by" id="quickDoneBy" required
+              class="w-full h-11 border border-gray-300 dark:border-gray-600 bg-white dark:bg-[#222]
+                     text-gray-900 dark:text-gray-100 rounded-lg px-3 text-sm
+                     focus:ring-2 focus:ring-[#0f8238] focus:border-[#0f8238] transition">
+        <option value="" disabled {% if not sticky_done_by %}selected{% endif %}>Person</option>
+        {% for m in household_members %}
+        <option value="{{ m }}" {% if m == sticky_done_by %}selected{% endif %}>{{ m }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="col-span-1 sm:col-span-2">
+      <input type="date" name="date" id="quickDate" value="{{ sticky_date }}" required
+             class="w-full h-11 border border-gray-300 dark:border-gray-600 bg-white dark:bg-[#222]
+                    text-gray-900 dark:text-gray-100 rounded-lg px-3 text-sm
+                    focus:ring-2 focus:ring-[#0f8238] focus:border-[#0f8238] transition">
+    </div>
+
+    <div class="col-span-2 sm:col-span-2">
+      <input type="text" name="note" maxlength="1000" placeholder="Note (optional)"
+             class="w-full h-11 border border-gray-300 dark:border-gray-600 bg-white dark:bg-[#222]
+                    text-gray-900 dark:text-gray-100 rounded-lg px-3 text-sm
+                    focus:ring-2 focus:ring-[#0f8238] focus:border-[#0f8238] transition">
+    </div>
+
+    <div class="col-span-2 sm:col-span-1">
+      <button type="submit" id="quickSubmit"
+              class="w-full h-11 bg-[#0f8238] hover:bg-green-700 disabled:opacity-50
+                     text-white rounded-lg text-sm font-medium transition">
+        <i class="fas fa-plus"></i>
+      </button>
+    </div>
+  </form>
+
+  <div class="flex flex-wrap items-center gap-2 mt-2.5">
+    <span class="text-xs text-gray-400 dark:text-gray-500">Date:</span>
+    <button type="button" class="js-date-shortcut text-xs px-2 py-0.5 rounded border
+            border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400
+            hover:text-[#0f8238] hover:border-[#0f8238] transition" data-offset="0">Today</button>
+    <button type="button" class="js-date-shortcut text-xs px-2 py-0.5 rounded border
+            border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400
+            hover:text-[#0f8238] hover:border-[#0f8238] transition" data-offset="-1">Yesterday</button>
+    <span id="quickStatus" class="text-xs ml-auto"></span>
+  </div>
+</div>
+
+<script>
+(function () {
+  const form     = document.getElementById('quickAddForm');
+  const status   = document.getElementById('quickStatus');
+  const submit   = document.getElementById('quickSubmit');
+  const catField = document.getElementById('quickCategory');
+  const dateField = document.getElementById('quickDate');
+  const list     = document.getElementById('expenseList');
+  const emptyState = document.getElementById('expenseEmptyState');
+  const csrf     = document.querySelector('meta[name="csrf-token"]').content;
+
+  function say(message, ok) {
+    status.textContent = message;
+    status.className = 'text-xs ml-auto ' + (ok ? 'text-[#0f8238] dark:text-[#5bd68d]' : 'text-red-500');
+    if (ok) setTimeout(() => { status.textContent = ''; }, 2500);
+  }
+
+  // One-click category chips.
+  document.querySelectorAll('.js-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      catField.value = chip.dataset.category;
+      form.querySelector('[name="amount"]').focus();
+    });
+  });
+
+  // Today / Yesterday.
+  document.querySelectorAll('.js-date-shortcut').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const d = new Date();
+      d.setDate(d.getDate() + parseInt(btn.dataset.offset, 10));
+      dateField.value = d.toISOString().slice(0, 10);
+    });
+  });
+
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    submit.disabled = true;
+
+    try {
+      const response = await fetch('{{ url_for("expenses.quick_add") }}', {
+        method: 'POST',
+        headers: { 'X-CSRFToken': csrf },
+        body: new FormData(form),
+      });
+      const data = await response.json();
+
+      if (!response.ok || !data.ok) {
+        say(data.error || 'Could not save that.', false);
+        return;
+      }
+
+      if (emptyState) emptyState.remove();
+      if (list) list.insertAdjacentHTML('afterbegin', data.html);
+
+      // Keep date and person; clear only what changes per entry.
+      form.querySelector('[name="amount"]').value = '';
+      form.querySelector('[name="note"]').value = '';
+      catField.selectedIndex = 0;
+      form.querySelector('[name="amount"]').focus();
+
+      say('Added', true);
+    } catch (err) {
+      say('Network error — not saved.', false);
+    } finally {
+      submit.disabled = false;
+    }
+  });
+})();
+</script>

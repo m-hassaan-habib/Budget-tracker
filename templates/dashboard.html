@@ -1,311 +1,306 @@
 {% extends "base.html" %}
 {% block content %}
 
-<header class="mb-8">
-  <h1 class="text-2xl font-extrabold text-[#0f8238] dark:text-[#5bd68d]">
-    Dashboard
-  </h1>
-  <p class="text-gray-500 dark:text-gray-400 mt-1 text-sm">
-    Your financial overview at a glance
-  </p>
-</header>
-
-<!-- MAIN KPI ROW — 3 big cards -->
-<section class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-5">
-
-  <!-- Income -->
-  <div class="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700 rounded-xl p-6 shadow-sm transition">
-    <div class="flex items-center gap-3 mb-3">
-      <div class="w-10 h-10 rounded-lg bg-green-50 dark:bg-green-900/20 flex items-center justify-center">
-        <i class="fas fa-arrow-down text-[#0f8238] dark:text-[#5bd68d]"></i>
-      </div>
-      <div>
-        <p class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-          {% if use_automated_income %}Automated{% else %}Manual{% endif %} Income
-        </p>
-        <p class="text-2xl font-extrabold text-[#0f8238] dark:text-[#5bd68d]">Rs. {{ total_income | round(2) }}</p>
-      </div>
-    </div>
-    <!-- Mode indicator -->
-    <div class="flex justify-between items-center text-sm py-2 border-t border-gray-100 dark:border-gray-700/50">
-      <span class="text-gray-500 dark:text-gray-400">Mode</span>
-      <span class="text-xs px-2 py-0.5 rounded-full {% if use_automated_income %}bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400{% else %}bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400{% endif %}">
-        {% if use_automated_income %}Automated{% else %}Manual{% endif %}
-      </span>
-    </div>
-    <!-- Alternative income value -->
-    <div class="flex justify-between items-center text-sm">
-      <span class="text-gray-500 dark:text-gray-400">
-        {% if use_automated_income %}Manual{% else %}Automated{% endif %}
-      </span>
-      <span class="font-semibold text-gray-400 dark:text-gray-500">
-        Rs. {% if use_automated_income %}{{ total_manual_income | round(2) }}{% else %}{{ total_automated_income | round(2) }}{% endif %}
-      </span>
-    </div>
-  </div>
-
-  <!-- Expenses -->
-  <div class="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700 rounded-xl p-6 shadow-sm transition">
-    <div class="flex items-center gap-3 mb-4">
-      <div class="w-10 h-10 rounded-lg bg-orange-50 dark:bg-orange-900/20 flex items-center justify-center">
-        <i class="fas fa-arrow-up text-[#f3703f] dark:text-[#ff9966]"></i>
-      </div>
-      <div>
-        <p class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Monthly Expenses</p>
-        <p class="text-2xl font-extrabold text-[#f3703f] dark:text-[#ff9966]">Rs. {{ total_expenses | round(2) }}</p>
-      </div>
-    </div>
-    <div class="flex justify-between text-xs text-gray-500 dark:text-gray-400 mb-1.5">
-      <span>{{ expense_count }} transaction{{ 's' if expense_count != 1 }}</span>
-      {% if monthly_limit %}
-      <span class="{% if total_expenses > monthly_limit %}text-red-500 font-semibold{% endif %}">
-        {{ (total_expenses / monthly_limit * 100) | round(1) if monthly_limit else 0 }}% of limit
-      </span>
-      {% endif %}
-    </div>
-    {% if monthly_limit %}
-    <div class="w-full h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
-      <div class="h-full rounded-full transition-all duration-700
-                  {% if total_expenses > monthly_limit %}bg-red-500{% else %}bg-[#f3703f] dark:bg-[#ff9966]{% endif %}"
-           style="width: {{ (total_expenses / monthly_limit * 100 if monthly_limit else 0) | clamp(0, 100) | round(1) }}%;"></div>
-    </div>
-    {% endif %}
-  </div>
-
-  <!-- Net Savings -->
-  <div class="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700 rounded-xl p-6 shadow-sm transition">
-    <div class="flex items-center gap-3 mb-4">
-      <div class="w-10 h-10 rounded-lg
-                  {% if net_savings >= 0 %}bg-green-50 dark:bg-green-900/20{% else %}bg-red-50 dark:bg-red-900/20{% endif %}
-                  flex items-center justify-center">
-        <i class="fas fa-wallet {% if net_savings >= 0 %}text-[#0f8238] dark:text-[#5bd68d]{% else %}text-red-500{% endif %}"></i>
-      </div>
-      <div>
-        <p class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Net Savings</p>
-        <p class="text-2xl font-extrabold {% if net_savings >= 0 %}text-[#0f8238] dark:text-[#5bd68d]{% else %}text-red-500{% endif %}">
-          Rs. {{ net_savings | round(2) }}
-        </p>
-      </div>
-    </div>
-    <p class="text-xs text-gray-500 dark:text-gray-400">
-      {% if total_income %}
-        Saving {{ ((net_savings / total_income) * 100) | round(1) }}% of income
-      {% else %}
-        Income - Expenses
-      {% endif %}
-    </p>
-    {% if total_income %}
-    <div class="w-full h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden mt-1.5">
-      <div class="h-full {% if net_savings < 0 %}bg-red-500{% else %}bg-[#0f8238] dark:bg-[#5bd68d]{% endif %} rounded-full transition-all duration-700"
-           style="width: {{ ((net_savings / total_income) * 100 if total_income else 0) | clamp(0,100) | round(1) }}%;"></div>
-    </div>
-    {% endif %}
-  </div>
-
-</section>
-
-<!-- SECONDARY ROW — 2 cards -->
-<section class="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-6">
-
-  <!-- Total Savings -->
-  <div class="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700 rounded-xl p-5 shadow-sm transition flex items-center gap-4">
-    <div class="w-10 h-10 rounded-lg bg-indigo-50 dark:bg-indigo-900/20 flex items-center justify-center shrink-0">
-      <i class="fas fa-piggy-bank text-[#6466f1] dark:text-[#8f90ff]"></i>
-    </div>
-    <div class="flex-1 min-w-0">
-      <p class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Total Savings</p>
-      <p class="text-xl font-extrabold text-[#6466f1] dark:text-[#8f90ff]">Rs. {{ total_savings | round(2) }}</p>
-    </div>
-    <p class="text-xs text-gray-400 dark:text-gray-500 shrink-0">Accumulated</p>
-  </div>
-
-  <!-- Grand Total -->
-  <div class="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700 rounded-xl p-5 shadow-sm transition flex items-center gap-4">
-    <div class="w-10 h-10 rounded-lg bg-purple-50 dark:bg-purple-900/20 flex items-center justify-center shrink-0">
-      <i class="fas fa-coins text-[#9333ea] dark:text-[#c084fc]"></i>
-    </div>
-    <div class="flex-1 min-w-0">
-      <p class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Grand Total</p>
-      <p class="text-xl font-extrabold text-[#9333ea] dark:text-[#c084fc]">Rs. {{ grand_total | round(2) }}</p>
-    </div>
-    <p class="text-xs text-gray-400 dark:text-gray-500 shrink-0">Net + Saved</p>
-  </div>
-
-</section>
-
-<!-- CHARTS — 2x2 grid -->
-<section class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
-
-  <!-- Category Chart -->
-  <div class="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700 rounded-xl p-5 shadow-sm transition">
-    <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Expenses by Category</h3>
-    {% if pie_labels %}
-    <div class="h-[240px]">
-      <canvas id="categoryChart"></canvas>
-    </div>
-    {% else %}
-    <div class="h-[240px] flex items-center justify-center">
-      <p class="text-sm text-gray-400 dark:text-gray-500">No expense data</p>
-    </div>
-    {% endif %}
-  </div>
-
-  <!-- Daily Chart -->
-  <div class="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700 rounded-xl p-5 shadow-sm transition">
-    <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Daily Expenses</h3>
-    {% if daily_labels %}
-    <div class="h-[240px]">
-      <canvas id="dailyChart"></canvas>
-    </div>
-    {% else %}
-    <div class="h-[240px] flex items-center justify-center">
-      <p class="text-sm text-gray-400 dark:text-gray-500">No daily data</p>
-    </div>
-    {% endif %}
-  </div>
-
-  <!-- Savings Trend -->
-  <div class="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700 rounded-xl p-5 shadow-sm transition">
-    <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Savings Trend</h3>
-    {% if savings_labels %}
-    <div class="h-[240px]">
-      <canvas id="savingsChart"></canvas>
-    </div>
-    {% else %}
-    <div class="h-[240px] flex items-center justify-center">
-      <p class="text-sm text-gray-400 dark:text-gray-500">Add data to see trends</p>
-    </div>
-    {% endif %}
-  </div>
-
-  <!-- By Person -->
-  <div class="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700 rounded-xl p-5 shadow-sm transition">
-    <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">By Person</h3>
-    {% if who_labels %}
-    <div class="h-[240px]">
-      <canvas id="whoChart"></canvas>
-    </div>
-    {% else %}
-    <div class="h-[240px] flex items-center justify-center">
-      <p class="text-sm text-gray-400 dark:text-gray-500">No expense data</p>
-    </div>
-    {% endif %}
-  </div>
-
-</section>
-
-<!-- RECENT EXPENSES -->
-<section class="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700 rounded-xl p-5 shadow-sm transition">
-  <div class="flex items-center justify-between mb-4">
-    <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300">Recent Expenses</h3>
-    {% if recent_expenses %}
-    <a href="{{ url_for('expenses.index') }}" class="text-xs text-[#0f8238] dark:text-[#5bd68d] hover:underline">
-      View all <i class="fas fa-arrow-right fa-xs ml-0.5"></i>
-    </a>
-    {% endif %}
-  </div>
-
-  {% if recent_expenses %}
-  <div class="overflow-x-auto -mx-5">
-    <table class="w-full text-sm text-left">
-      <thead class="text-[10px] uppercase text-gray-400 dark:text-gray-500 border-b border-gray-100 dark:border-gray-700/50">
-        <tr>
-          <th class="py-2 pl-5 pr-3">Amount</th>
-          <th class="py-2 px-3">Category</th>
-          <th class="py-2 px-3 hidden sm:table-cell">Note</th>
-          <th class="py-2 pl-3 pr-5 text-right">Date</th>
-        </tr>
-      </thead>
-      <tbody class="text-gray-700 dark:text-gray-300">
-        {% for exp in recent_expenses %}
-        <tr onclick="window.location='{{ url_for('expenses.view_expense', id=exp.id) }}'"
-            class="border-t border-gray-50 dark:border-gray-800 cursor-pointer
-                   hover:bg-gray-50 dark:hover:bg-[#222] transition">
-          <td class="py-2.5 pl-5 pr-3 font-semibold text-[#f3703f] dark:text-[#ff9966]">
-            Rs. {{ exp.amount }}
-          </td>
-          <td class="py-2.5 px-3">
-            <span class="inline-block px-2 py-0.5 text-[11px] rounded-full
-                         bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400">
-              {{ exp.category }}
-            </span>
-          </td>
-          <td class="py-2.5 px-3 text-gray-400 dark:text-gray-500 truncate max-w-[180px] hidden sm:table-cell text-xs">
-            {{ exp.note or "—" }}
-          </td>
-          <td class="py-2.5 pl-3 pr-5 text-right text-xs text-gray-400 dark:text-gray-500">
-            {{ exp.date.strftime('%b %d') }}
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-  {% else %}
-  <div class="text-center py-6">
-    <p class="text-sm text-gray-400 dark:text-gray-500">No expenses yet.
-      <a href="{{ url_for('expenses.index') }}" class="text-[#0f8238] dark:text-[#5bd68d] hover:underline">Add one</a>
-    </p>
-  </div>
-  {% endif %}
-</section>
-
-<script>
-{% if who_labels %}
-new Chart(document.getElementById('whoChart'), {
-  type: 'bar',
-  data: {
-    labels: {{ who_labels|tojson }},
-    datasets: [{
-      data: {{ who_values|tojson }},
-      backgroundColor: ['#003f5c', '#7a5195', '#ff7c43', '#ffa600', '#f95d6a'],
-      borderRadius: 6
-    }]
-  },
-  options: {
-    responsive: true, maintainAspectRatio: false, indexAxis: 'y',
-    plugins: { legend: { display: false } },
-    scales: { x: { beginAtZero: true, grid: { display: false }, ticks: { font: { size: 10 } } }, y: { grid: { display: false }, ticks: { font: { size: 11 } } } }
+<style>
+  .viz {
+    color-scheme: light;
+    --surface-1:      #ffffff;
+    --text-primary:   #111827;
+    --text-secondary: #6b7280;
+    --text-muted:     #9ca3af;
+    --grid:           #e5e7eb;
+    --series-1:       #2a78d6;  /* person 1 */
+    --series-2:       #eb6834;  /* person 2 · also "spending up" */
+    --series-3:       #1baf7a;  /* person 3 · also "spending down" */
+    --magnitude:      #2a78d6;  /* sequential hue for ranked categories */
+    --up:             #eb6834;
+    --down:           #1baf7a;
   }
-});
+  /* Keyed on html.dark only -- the same signal base.html's theme toggle and
+     every other component use. Adding a prefers-color-scheme branch here
+     would give OS-dark + app-light users dark bars on a light page. */
+  html.dark .viz {
+    color-scheme: dark;
+    --surface-1:      #1a1a1a;
+    --text-primary:   #f3f4f6;
+    --text-secondary: #9ca3af;
+    --text-muted:     #6b7280;
+    --grid:           #374151;
+    --series-1:       #3987e5;
+    --series-2:       #d95926;
+    --series-3:       #199e70;
+    --magnitude:      #3987e5;
+    --up:             #d95926;
+    --down:           #199e70;
+  }
+
+  /* 4px rounded data-end, anchored square to the baseline */
+  .bar-track { background: var(--grid); border-radius: 4px; height: 8px; overflow: hidden; }
+  .bar-fill  { height: 100%; border-radius: 0 4px 4px 0; min-width: 2px; }
+  .bar-fill-left { border-radius: 4px 0 0 4px; }
+  .sparkline { display: flex; align-items: flex-end; gap: 2px; height: 48px; }
+  .sparkline > div { flex: 1 1 0; min-width: 2px; background: var(--magnitude); border-radius: 2px 2px 0 0; opacity: .75; }
+  .sparkline > div:hover { opacity: 1; }
+</style>
+
+<div class="viz">
+
+<!-- HEADER + MONTH SELECTOR -->
+<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
+  <div>
+    <h2 class="text-xl font-bold text-gray-900 dark:text-gray-200">{{ month_display }}</h2>
+    <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+      {{ expense_count }} expense{{ 's' if expense_count != 1 }} this month
+    </p>
+  </div>
+
+  <form method="GET" class="flex items-center gap-2">
+    <select name="month" onchange="this.form.submit()"
+            class="h-9 text-sm border border-gray-300 dark:border-gray-600 dark:bg-[#222]
+                   dark:text-gray-200 rounded-lg px-3 focus:ring-[#0f8238] focus:border-[#0f8238]">
+      {% for value, label in month_options %}
+      <option value="{{ value }}" {% if value == month %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  </form>
+</div>
+
+<!-- KPI ROW -->
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+
+  <div class="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700 rounded-lg p-5 shadow-sm">
+    <span class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Spent this month</span>
+    <p class="text-3xl font-extrabold text-gray-900 dark:text-gray-100 mt-1">Rs. {{ month_expenses | round(0) | int }}</p>
+    {% if month_change_percent is not none %}
+      <p class="text-xs mt-1 {% if month_change > 0 %}text-[#eb6834]{% else %}text-[#1baf7a]{% endif %}">
+        {% if month_change > 0 %}▲{% else %}▼{% endif %}
+        Rs. {{ month_change | abs | round(0) | int }}
+        ({{ month_change_percent | abs | round(0) | int }}%) vs {{ previous_month_display }}
+      </p>
+    {% else %}
+      <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">No {{ previous_month_display }} data to compare</p>
+    {% endif %}
+  </div>
+
+  <div class="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700 rounded-lg p-5 shadow-sm">
+    <span class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+      Income {% if use_automated_income %}<span class="normal-case font-normal">(auto)</span>{% endif %}
+    </span>
+    <p class="text-3xl font-extrabold text-gray-900 dark:text-gray-100 mt-1">Rs. {{ month_income | round(0) | int }}</p>
+    <p class="text-xs mt-1 {% if net >= 0 %}text-[#1baf7a]{% else %}text-[#eb6834]{% endif %}">
+      Net {% if net >= 0 %}+{% endif %}Rs. {{ net | round(0) | int }} this month
+    </p>
+  </div>
+
+  <div class="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700 rounded-lg p-5 shadow-sm">
+    <span class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Savings</span>
+    <p class="text-3xl font-extrabold text-gray-900 dark:text-gray-100 mt-1">Rs. {{ total_savings | round(0) | int }}</p>
+    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">Opening balance + all income − all expenses</p>
+  </div>
+
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+
+  <!-- 1. WHERE IT WENT -->
+  <section class="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700 rounded-lg p-5 shadow-sm">
+    <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-1">Where it went</h3>
+    <p class="text-xs text-gray-400 dark:text-gray-500 mb-4">Biggest first &middot; {{ month_display }}</p>
+
+    {% if top_categories %}
+    <ul class="space-y-3">
+      {% for cat in top_categories %}
+      <li>
+        <div class="flex items-baseline justify-between gap-3 mb-1">
+          <span class="text-sm text-gray-700 dark:text-gray-300 truncate">{{ cat.name }}</span>
+          <span class="text-sm font-semibold text-gray-900 dark:text-gray-100 whitespace-nowrap">
+            Rs. {{ cat.total | round(0) | int }}
+            <span class="text-xs font-normal text-gray-400 dark:text-gray-500">{{ cat.share | round(0) | int }}%</span>
+          </span>
+        </div>
+        <div class="bar-track" title="{{ cat.name }}: Rs. {{ cat.total | round(2) }} across {{ cat.count }} expense{{ 's' if cat.count != 1 }}">
+          <div class="bar-fill" style="width: {{ (cat.total / max_category_total * 100) if max_category_total else 0 }}%;
+                                       background: var(--magnitude);"></div>
+        </div>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="text-sm text-gray-400 dark:text-gray-500 py-6 text-center">Nothing recorded this month</p>
+    {% endif %}
+  </section>
+
+  <!-- 2. WHAT CHANGED -->
+  <section class="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700 rounded-lg p-5 shadow-sm">
+    <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-1">What changed</h3>
+    <p class="text-xs text-gray-400 dark:text-gray-500 mb-4">
+      vs {{ previous_month_display }} &middot; biggest swing first
+    </p>
+
+    {% if movers %}
+    <ul class="space-y-3">
+      {% for m in movers %}
+      <li>
+        <div class="flex items-baseline justify-between gap-3 mb-1">
+          <span class="text-sm text-gray-700 dark:text-gray-300 truncate">
+            {{ m.category }}
+            {% if m.is_new %}<span class="text-xs text-gray-400">new</span>
+            {% elif m.stopped %}<span class="text-xs text-gray-400">stopped</span>{% endif %}
+          </span>
+          <span class="text-sm font-semibold whitespace-nowrap"
+                style="color: {% if m.change > 0 %}var(--up){% else %}var(--down){% endif %};">
+            {% if m.change > 0 %}+{% else %}−{% endif %}Rs. {{ m.change | abs | round(0) | int }}
+            {% if m.percent is not none %}
+            <span class="text-xs font-normal text-gray-400 dark:text-gray-500">
+              {{ m.percent | abs | round(0) | int }}%
+            </span>
+            {% endif %}
+          </span>
+        </div>
+
+        <!-- diverging bar: neutral centre line, up right / down left.
+             items-stretch, not items-center: the fills are height:100% and a
+             centred flex child has no height for them to fill. -->
+        <div class="flex items-stretch h-2">
+          <div class="flex-1 flex justify-end">
+            {% if m.change < 0 %}
+            <div class="bar-fill bar-fill-left h-2"
+                 style="width: {{ (m.change | abs / max_mover_change * 100) if max_mover_change else 0 }}%;
+                        background: var(--down);"></div>
+            {% endif %}
+          </div>
+          <div style="width:1px; height:8px; background: var(--grid);"></div>
+          <div class="flex-1">
+            {% if m.change > 0 %}
+            <div class="bar-fill h-2"
+                 style="width: {{ (m.change / max_mover_change * 100) if max_mover_change else 0 }}%;
+                        background: var(--up);"></div>
+            {% endif %}
+          </div>
+        </div>
+
+        <p class="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+          Rs. {{ m.before | round(0) | int }} → Rs. {{ m.now | round(0) | int }}
+        </p>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="text-sm text-gray-400 dark:text-gray-500 py-6 text-center">
+      Nothing to compare against {{ previous_month_display }} yet
+    </p>
+    {% endif %}
+  </section>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+
+  <!-- 3. WHO SPENT -->
+  <section class="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700 rounded-lg p-5 shadow-sm">
+    <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-1">Who spent</h3>
+    <p class="text-xs text-gray-400 dark:text-gray-500 mb-4">{{ month_display }}</p>
+
+    {% if people %}
+    <ul class="space-y-3">
+      {% for p in people %}
+      <li>
+        <div class="flex items-baseline justify-between gap-3 mb-1">
+          <span class="text-sm text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
+            <span style="width:8px;height:8px;border-radius:2px;display:inline-block;
+                         background: var(--series-{{ (loop.index0 % 3) + 1 }});"></span>
+            {{ p.name }}
+          </span>
+          <span class="text-sm font-semibold text-gray-900 dark:text-gray-100 whitespace-nowrap">
+            Rs. {{ p.total | round(0) | int }}
+            <span class="text-xs font-normal text-gray-400 dark:text-gray-500">
+              {{ (p.total / month_expenses * 100) | round(0) | int if month_expenses else 0 }}%
+            </span>
+          </span>
+        </div>
+        <div class="bar-track">
+          <div class="bar-fill" style="width: {{ (p.total / max_person_total * 100) if max_person_total else 0 }}%;
+                                       background: var(--series-{{ (loop.index0 % 3) + 1 }});"></div>
+        </div>
+        <p class="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+          {{ p.count }} expense{{ 's' if p.count != 1 }}{% if p.top_category %} &middot; mostly {{ p.top_category }}{% endif %}
+        </p>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="text-sm text-gray-400 dark:text-gray-500 py-6 text-center">Nothing recorded this month</p>
+    {% endif %}
+  </section>
+
+  <!-- DAILY PACE -->
+  <section class="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700 rounded-lg p-5 shadow-sm">
+    <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-1">Day by day</h3>
+    <p class="text-xs text-gray-400 dark:text-gray-500 mb-4">
+      {{ month_display }} &middot; in date order
+    </p>
+
+    {% if daily %}
+    <div class="sparkline" role="img"
+         aria-label="Daily spending for {{ month_display }}, in date order">
+      {% for d in daily %}
+      <div style="height: {{ (d.total / max_daily * 100) if max_daily else 0 }}%;"
+           title="{{ d.date.strftime('%b %d') }}: Rs. {{ d.total | round(2) }}"></div>
+      {% endfor %}
+    </div>
+    <div class="flex justify-between text-xs text-gray-400 dark:text-gray-500 mt-2">
+      <span>{{ daily[0].date.strftime('%b %d') }}</span>
+      <span>Peak Rs. {{ max_daily | round(0) | int }}</span>
+      <span>{{ daily[-1].date.strftime('%b %d') }}</span>
+    </div>
+    {% else %}
+    <p class="text-sm text-gray-400 dark:text-gray-500 py-6 text-center">Nothing recorded this month</p>
+    {% endif %}
+
+    {% if monthly_limit %}
+    <div class="mt-5 pt-4 border-t border-gray-100 dark:border-gray-700/50">
+      <div class="flex items-baseline justify-between mb-1">
+        <span class="text-xs text-gray-500 dark:text-gray-400">Against monthly limit</span>
+        <span class="text-xs font-semibold text-gray-700 dark:text-gray-300">
+          Rs. {{ month_expenses | round(0) | int }} / {{ monthly_limit | round(0) | int }}
+        </span>
+      </div>
+      <div class="bar-track">
+        <div class="bar-fill"
+             style="width: {{ (month_expenses / monthly_limit * 100) | clamp(0, 100) }}%;
+                    background: {% if month_expenses > monthly_limit %}var(--up){% else %}var(--magnitude){% endif %};"></div>
+      </div>
+    </div>
+    {% endif %}
+  </section>
+</div>
+
+<!-- RECENT -->
+{% if recent_expenses %}
+<section class="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700 rounded-lg p-5 shadow-sm">
+  <div class="flex items-center justify-between mb-3">
+    <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-200">Latest entries</h3>
+    <a href="{{ url_for('expenses.index') }}"
+       class="text-xs text-gray-400 hover:text-[#0f8238] dark:hover:text-[#5bd68d] transition">
+      All expenses <i class="fas fa-arrow-right fa-xs ml-0.5"></i>
+    </a>
+  </div>
+  <ul class="divide-y divide-gray-100 dark:divide-gray-700/50">
+    {% for e in recent_expenses %}
+    <li class="py-2 flex items-center justify-between gap-3 text-sm">
+      <span class="text-gray-600 dark:text-gray-400 truncate">
+        {{ e.category }}
+        {% if e.note %}<span class="text-gray-400 dark:text-gray-500">&middot; {{ e.note }}</span>{% endif %}
+      </span>
+      <span class="flex items-center gap-3 shrink-0">
+        {% if e.done_by %}<span class="text-xs text-gray-400 dark:text-gray-500">{{ e.done_by }}</span>{% endif %}
+        <span class="text-xs text-gray-400 dark:text-gray-500">{{ e.date.strftime('%b %d') }}</span>
+        <span class="font-semibold text-gray-900 dark:text-gray-100">Rs. {{ e.amount }}</span>
+      </span>
+    </li>
+    {% endfor %}
+  </ul>
+</section>
 {% endif %}
 
-{% if pie_labels %}
-new Chart(document.getElementById('categoryChart'), {
-  type: 'doughnut',
-  data: {
-    labels: {{ pie_labels|tojson }},
-    datasets: [{ data: {{ pie_values|tojson }}, backgroundColor: ['#003f5c','#2f4b7c','#665191','#a05195','#d45087','#f95d6a','#ff7c43','#ffa600','#ffd166','#f6c667'], borderWidth: 0 }]
-  },
-  options: { responsive: true, maintainAspectRatio: false, cutout: '55%', plugins: { legend: { position: 'right', labels: { boxWidth: 10, padding: 6, font: { size: 10 } } } } }
-});
-{% endif %}
-
-{% if daily_labels %}
-new Chart(document.getElementById('dailyChart'), {
-  type: 'bar',
-  data: {
-    labels: {{ daily_labels|tojson }},
-    datasets: [{ data: {{ daily_values|tojson }}, backgroundColor: 'rgba(243,112,63,0.7)', borderRadius: 4 }]
-  },
-  options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false }, ticks: { font: { size: 9 }, maxRotation: 45 } }, y: { grid: { display: false }, beginAtZero: true, ticks: { font: { size: 10 } } } } }
-});
-{% endif %}
-
-{% if savings_labels %}
-new Chart(document.getElementById('savingsChart'), {
-  type: 'line',
-  data: {
-    labels: {{ savings_labels|tojson }},
-    datasets: [{
-      label: 'Savings', data: {{ savings_values|tojson }}, fill: true,
-      borderColor: '#663399', backgroundColor: 'rgba(102,51,153,0.15)',
-      pointRadius: 3, pointHoverRadius: 5, pointBackgroundColor: '#663399', tension: 0.4
-    }]
-  },
-  options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { mode: 'index', intersect: false } }, scales: { x: { ticks: { font: { size: 10 } }, grid: { display: false } }, y: { beginAtZero: true, ticks: { font: { size: 10 } }, grid: { display: false } } } }
-});
-{% endif %}
-</script>
-
+</div>
 {% endblock %}

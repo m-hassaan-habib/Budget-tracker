@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-lg mx-auto bg-white dark:bg-[#1a1a1a] rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+  <h2 class="text-xl font-bold mb-1 text-gray-900 dark:text-gray-100">Household Members</h2>
+  <p class="text-sm text-gray-500 dark:text-gray-400 mb-5">
+    Everyone who spends from this budget. Used for <span class="font-medium">Done By</span>
+    and to record who made each change.
+  </p>
+
+  <form method="POST" class="flex space-x-2 mb-5">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="text" name="name" placeholder="Add a person" maxlength="50"
+           class="flex-1 h-10 border border-gray-300 dark:border-gray-600 bg-white dark:bg-[#222]
+                  text-gray-900 dark:text-gray-100 rounded-md px-3 text-sm
+                  focus:outline-none focus:ring-2 focus:ring-[#0f8238]">
+    <button type="submit" class="h-10 px-4 bg-[#0f8238] hover:bg-green-700 text-white rounded-md text-sm font-medium transition">
+      Add
+    </button>
+  </form>
+
+  <table class="w-full text-sm text-left text-gray-700 dark:text-gray-300 border border-gray-100 dark:border-gray-700">
+    <thead class="bg-gray-100 dark:bg-[#222] text-gray-600 dark:text-gray-400">
+      <tr>
+        <th class="px-4 py-2">Name</th>
+        <th class="px-4 py-2 w-24"></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for m in members %}
+      <tr class="border-t dark:border-gray-700">
+        <td class="px-4 py-2">
+          {{ m.name }}
+          {% if m.name == current_actor %}
+            <span class="ml-2 text-xs px-2 py-0.5 rounded-full bg-[#0f8238]/10 text-[#0f8238] dark:text-[#5bd68d]">you</span>
+          {% endif %}
+        </td>
+        <td class="px-4 py-2 text-right">
+          <form method="POST" action="{{ url_for('members.delete', id=m.id) }}" class="inline"
+                onsubmit="return confirm('Remove {{ m.name }}? Past expenses keep their Done By value.');">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="text-xs text-red-500 hover:text-red-600">Delete</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+      {% if not members %}
+      <tr><td colspan="2" class="px-4 py-4 text-center text-xs text-gray-400">No members yet</td></tr>
+      {% endif %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

@@ -51,7 +51,10 @@ class TestSettingsAccess:
             {'total': Decimal('5000.00'), 'count': 10},  # expenses
             {'cnt': 2},  # archived months
         ]
-        cursor.fetchall.return_value = [{'done_by': 'Self', 'total': Decimal('5000.00')}]  # automated income
+        cursor.fetchall.side_effect = [
+            [{'done_by': 'Self', 'total': Decimal('5000.00')}],  # automated income
+            [],  # available months
+        ]
         app_no_csrf.db_pool.get_connection.return_value = conn
 
         response = client_no_csrf.get('/settings/')
@@ -72,7 +75,10 @@ class TestSettingsDisplay:
             {'total': Decimal('8000.00'), 'count': 15},  # expenses
             {'cnt': 3},
         ]
-        cursor.fetchall.return_value = [{'done_by': 'Self', 'total': Decimal('8000.00')}]  # automated income
+        cursor.fetchall.side_effect = [
+            [{'done_by': 'Self', 'total': Decimal('8000.00')}],  # automated income
+            [],  # available months
+        ]
         app_no_csrf.db_pool.get_connection.return_value = conn
 
         response = client_no_csrf.get('/settings/')
@@ -89,10 +95,13 @@ class TestSettingsDisplay:
             {'total': Decimal('8000.00'), 'count': 15},  # expenses
             {'cnt': 3},
         ]
-        cursor.fetchall.return_value = [
-            {'done_by': 'Person1', 'total': Decimal('4000.00')},
-            {'done_by': 'Person2', 'total': Decimal('4000.00')},
-        ]  # automated income = 8000
+        cursor.fetchall.side_effect = [
+            [
+                {'done_by': 'Person1', 'total': Decimal('4000.00')},
+                {'done_by': 'Person2', 'total': Decimal('4000.00')},
+            ],  # automated income = 8000
+            [],  # available months
+        ]
         app_no_csrf.db_pool.get_connection.return_value = conn
 
         response = client_no_csrf.get('/settings/')
@@ -202,67 +211,31 @@ class TestUpdateSettings:
         assert '/settings' in response.headers.get('Location', '')
 
 
-class TestEndMonth:
-    """Test end month archive functionality."""
+class TestMonthRollover:
+    """End Month is gone: months are derived from each entry's date."""
 
-    def test_end_month_archives_data(self, client_no_csrf, app_no_csrf):
-        """End month should archive income and expenses."""
+    def test_end_month_route_removed(self, client_no_csrf):
+        """Forgetting to click a button can no longer misfile a month."""
         login_session(client_no_csrf)
+        response = client_no_csrf.post('/settings/end-month')
+        assert response.status_code == 404
 
-        conn, cursor = make_mock_connection()
-        # New query order: settings, manual income, expenses
-        cursor.fetchone.side_effect = [
-            {'use_automated_income': 0, 'total_savings': Decimal('2000.00')},  # settings
-            {'total': Decimal('10000.00')},  # manual income
-            {'total': Decimal('5000.00')},   # total expenses
-        ]
-        cursor.fetchall.side_effect = [
-            [{'source': 'Salary', 'amount': Decimal('10000.00')}],  # income rows
-            [{'amount': Decimal('1000.00'), 'category': 'Food', 'note': 'Test', 'date': '2024-01-15', 'done_by': 'Self'}],  # expense rows
-        ]
-        app_no_csrf.db_pool.get_connection.return_value = conn
-
-        response = client_no_csrf.post('/settings/end-month', follow_redirects=False)
-        assert response.status_code == 302
-        assert '/settings' in response.headers.get('Location', '')
-        conn.commit.assert_called()
-
-    def test_end_month_updates_savings(self, client_no_csrf, app_no_csrf):
-        """End month should add net savings to total savings."""
-        login_session(client_no_csrf)
-
-        conn, cursor = make_mock_connection()
-        # With manual mode: Net = 10000 - 6000 = 4000, new total = 5000 + 4000 = 9000
-        cursor.fetchone.side_effect = [
-            {'use_automated_income': 0, 'total_savings': Decimal('5000.00')},  # settings
-            {'total': Decimal('10000.00')},  # manual income
-            {'total': Decimal('6000.00')},   # total expenses
-        ]
-        cursor.fetchall.side_effect = [[], []]  # empty income/expense for archive
-        app_no_csrf.db_pool.get_connection.return_value = conn
-
-        response = client_no_csrf.post('/settings/end-month', follow_redirects=False)
-        assert response.status_code == 302
-
-    def test_end_month_clears_current_data(self, client_no_csrf, app_no_csrf):
-        """End month should delete current income and expenses."""
+    def test_settings_page_explains_rollover(self, client_no_csrf, app_no_csrf):
         login_session(client_no_csrf)
 
         conn, cursor = make_mock_connection()
         cursor.fetchone.side_effect = [
-            {'use_automated_income': 0, 'total_savings': Decimal('2000.00')},
-            {'total': Decimal('10000.00')},
-            {'total': Decimal('5000.00')},
+            {'monthly_limit': Decimal('50000.00'), 'total_savings': Decimal('10000.00'),
+             'default_done_by': 'Self', 'use_automated_income': 0},
+            {'total': Decimal('10000.00'), 'count': 1},
+            {'total': Decimal('5000.00'), 'count': 2},
         ]
-        cursor.fetchall.side_effect = [[], []]
+        cursor.fetchall.side_effect = [[{'done_by': 'Self', 'total': Decimal('5000.00')}], []]
         app_no_csrf.db_pool.get_connection.return_value = conn
 
-        client_no_csrf.post('/settings/end-month')
-
-        # Verify DELETE queries were called
-        calls = [str(call) for call in cursor.execute.call_args_list]
-        assert any('DELETE FROM income' in call for call in calls)
-        assert any('DELETE FROM expense' in call for call in calls)
+        body = client_no_csrf.get('/settings/').get_data(as_text=True)
+        assert 'Months look after themselves' in body
+        assert 'end-month' not in body
 
 
 class TestFreshStart:
@@ -300,11 +273,6 @@ class TestSettingsCSRF:
         })
         assert response.status_code == 400
 
-    def test_end_month_without_csrf_rejected(self, client, app):
-        """POST to end month without CSRF should be rejected."""
-        login_session(client)
-        response = client.post('/settings/end-month')
-        assert response.status_code == 400
 
     def test_fresh_start_without_csrf_rejected(self, client, app):
         """POST to fresh start without CSRF should be rejected."""

@@ -1,6 +1,7 @@
 from decimal import Decimal, InvalidOperation
 from flask import Blueprint, render_template, request, redirect, url_for, current_app, session, flash
-from auth_utils import login_required
+from auth_utils import login_required, current_actor
+import activity
 
 income_bp = Blueprint('income', __name__, url_prefix='/income')
 
@@ -63,8 +64,9 @@ def add_income():
 
     conn = current_app.db_pool.get_connection()
     try:
-        with conn.cursor() as cur:
+        with conn.cursor(dictionary=True) as cur:
             cur.execute("INSERT INTO income (source, amount, user_id) VALUES (%s, %s, %s)", (source, str(amount_val), session['user_id']))
+            activity.log_created(cur, session['user_id'], current_actor(), 'income', cur.lastrowid)
             conn.commit()
         return redirect(url_for('income.index'))
     finally:
@@ -100,7 +102,11 @@ def edit_income(id):
                 flash("Please enter a valid positive amount.", "error")
                 return redirect(url_for('income.edit_income', id=id))
 
+            before = activity.snapshot(cur, 'income', id, session['user_id'])
             cur.execute("UPDATE income SET source=%s, amount=%s WHERE id=%s AND user_id=%s", (source, str(amount_val), id, session['user_id']))
+            after = activity.snapshot(cur, 'income', id, session['user_id'])
+            activity.log_change(cur, session['user_id'], current_actor(), 'income', id,
+                                activity.UPDATE, before=before, after=after)
             conn.commit()
         return redirect(url_for('income.index'))
     finally:
@@ -112,8 +118,12 @@ def edit_income(id):
 def delete_income(id):
     conn = current_app.db_pool.get_connection()
     try:
-        with conn.cursor() as cur:
+        with conn.cursor(dictionary=True) as cur:
+            before = activity.snapshot(cur, 'income', id, session['user_id'])
             cur.execute("DELETE FROM income WHERE id=%s AND user_id=%s", (id, session['user_id']))
+            if before:
+                activity.log_change(cur, session['user_id'], current_actor(), 'income', id,
+                                    activity.DELETE, before=before)
             conn.commit()
         return redirect(url_for('income.index'))
     finally:

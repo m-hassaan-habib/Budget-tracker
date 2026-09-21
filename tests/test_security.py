@@ -130,11 +130,6 @@ class TestCSRFProtection:
         response = client.post('/settings/fresh-start')
         assert response.status_code == 400
 
-    def test_end_month_without_csrf_rejected(self, client, app):
-        """POST to end month without CSRF token should be rejected."""
-        login_session(client)
-        response = client.post('/settings/end-month')
-        assert response.status_code == 400
 
 
 # ─────────────────────────────────────────────────────────────

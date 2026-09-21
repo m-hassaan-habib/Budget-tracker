@@ -1,7 +1,9 @@
 from decimal import Decimal, InvalidOperation
 from flask import Blueprint, render_template, request, redirect, url_for, current_app, session, flash
 from datetime import datetime
-from auth_utils import login_required
+from auth_utils import login_required, current_actor
+from months import available_months
+import activity
 
 settings_bp = Blueprint('settings', __name__, url_prefix='/settings')
 
@@ -48,15 +50,8 @@ def index():
             month_income = month_automated_income if use_automated_income else month_manual_income
             month_net = month_income - month_expenses
 
-            # Count archived months
-            cur.execute("""
-                SELECT COUNT(DISTINCT month) AS cnt FROM (
-                    SELECT month FROM archived_income WHERE user_id=%s
-                    UNION
-                    SELECT month FROM archived_expense WHERE user_id=%s
-                ) AS months
-            """, (session['user_id'], session['user_id']))
-            archived_months = int(cur.fetchone()['cnt'])
+            # How many months this household has any record of.
+            archived_months = len(available_months(cur, session['user_id']))
 
         return render_template(
             'settings.html',
@@ -111,7 +106,11 @@ def update_limit():
                     INSERT INTO setting (monthly_limit, total_savings, default_done_by, use_automated_income, user_id)
                     VALUES (%s, %s, %s, %s, %s)
                 """, (str(limit_val), str(savings_val), default_done_by or None, 1 if use_automated_income else 0, session['user_id']))
+                activity.log_created(cur, session['user_id'], current_actor(), 'setting', cur.lastrowid)
             else:
+                # A changed limit or savings figure silently moves every number
+                # on the dashboard, so it belongs in the trail.
+                before = activity.snapshot(cur, 'setting', row['id'], session['user_id'])
                 cur.execute("""
                     UPDATE setting
                     SET monthly_limit=%s,
@@ -120,69 +119,10 @@ def update_limit():
                         use_automated_income=%s
                     WHERE user_id=%s
                 """, (str(limit_val), str(savings_val), default_done_by or None, 1 if use_automated_income else 0, session['user_id']))
+                after = activity.snapshot(cur, 'setting', row['id'], session['user_id'])
+                activity.log_change(cur, session['user_id'], current_actor(), 'setting', row['id'],
+                                    activity.UPDATE, before=before, after=after)
 
-            conn.commit()
-        return redirect(url_for('settings.index'))
-    finally:
-        conn.close()
-
-
-@settings_bp.route('/end-month', methods=['POST'])
-@login_required
-def end_month():
-    # Use the previous month since we're archiving last month's data
-    now = datetime.now()
-    # Calculate previous month (handle January -> December of previous year)
-    if now.month == 1:
-        previous_month = now.replace(year=now.year - 1, month=12, day=1)
-    else:
-        previous_month = now.replace(month=now.month - 1, day=1)
-    month_str = previous_month.strftime("%Y-%m")
-
-    conn = current_app.db_pool.get_connection()
-    try:
-        with conn.cursor(dictionary=True) as cur:
-            # Check income mode setting
-            cur.execute("SELECT use_automated_income, total_savings FROM setting WHERE user_id=%s LIMIT 1", (session['user_id'],))
-            setting = cur.fetchone()
-            use_automated_income = bool(setting['use_automated_income']) if setting else False
-
-            # Get manual income
-            cur.execute("SELECT COALESCE(SUM(amount), 0) AS total FROM income WHERE user_id=%s", (session['user_id'],))
-            manual_income = float(cur.fetchone()['total'])
-
-            # Get expenses
-            cur.execute("SELECT COALESCE(SUM(amount), 0) AS total FROM expense WHERE user_id=%s", (session['user_id'],))
-            total_expenses = float(cur.fetchone()['total'])
-
-            # Automated income = total expenses (sum of all done_by amounts)
-            automated_income = total_expenses
-
-            # Use the appropriate income based on toggle
-            total_income = automated_income if use_automated_income else manual_income
-            net_savings = total_income - total_expenses
-
-            if setting:
-                new_savings = float(setting['total_savings']) + net_savings
-                cur.execute("UPDATE setting SET total_savings=%s WHERE user_id=%s", (new_savings, session['user_id']))
-
-            # Archive manual income (even if using automated, for historical records)
-            cur.execute("SELECT source, amount FROM income WHERE user_id=%s", (session['user_id'],))
-            for row in cur.fetchall():
-                cur.execute(
-                    "INSERT INTO archived_income (source, amount, month, user_id) VALUES (%s, %s, %s, %s)",
-                    (row['source'], row['amount'], month_str, session['user_id'])
-                )
-
-            cur.execute("SELECT amount, category, note, date, done_by FROM expense WHERE user_id=%s", (session['user_id'],))
-            for row in cur.fetchall():
-                cur.execute(
-                    "INSERT INTO archived_expense (amount, category, note, date, month, user_id, done_by) VALUES (%s, %s, %s, %s, %s, %s, %s)",
-                    (row['amount'], row['category'], row['note'], row['date'], month_str, session['user_id'], row['done_by'])
-                )
-
-            cur.execute("DELETE FROM income WHERE user_id=%s", (session['user_id'],))
-            cur.execute("DELETE FROM expense WHERE user_id=%s", (session['user_id'],))
             conn.commit()
         return redirect(url_for('settings.index'))
     finally:
@@ -195,11 +135,23 @@ def fresh_start():
     conn = current_app.db_pool.get_connection()
     try:
         with conn.cursor() as cur:
-            cur.execute("DELETE FROM archived_income WHERE user_id=%s", (session['user_id'],))
-            cur.execute("DELETE FROM archived_expense WHERE user_id=%s", (session['user_id'],))
             cur.execute("DELETE FROM income WHERE user_id=%s", (session['user_id'],))
             cur.execute("DELETE FROM expense WHERE user_id=%s", (session['user_id'],))
             cur.execute("DELETE FROM setting WHERE user_id=%s", (session['user_id'],))
+            cur.execute("DELETE FROM activity_log WHERE user_id=%s", (session['user_id'],))
+
+            # The retired archive tables are kept as a migration safety net and
+            # are no longer read by the app; clear them too if they're present
+            # so "fresh start" really does leave nothing behind.
+            for table in ("archived_income_backup", "archived_expense_backup"):
+                cur.execute(
+                    "SELECT COUNT(*) FROM information_schema.tables "
+                    "WHERE table_schema = DATABASE() AND table_name = %s",
+                    (table,)
+                )
+                if cur.fetchone()[0]:
+                    cur.execute(f"DELETE FROM {table} WHERE user_id=%s", (session['user_id'],))
+
             conn.commit()
         return redirect(url_for('settings.index'))
     finally:
