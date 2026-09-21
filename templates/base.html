@@ -120,8 +120,34 @@
       <a href="{{ url_for('income.index') }}" class="hover:text-[#0f8238]">Income</a>
       <a href="{{ url_for('history.index') }}" class="hover:text-[#0f8238]">History</a>
       <a href="{{ url_for('history.compare') }}">Compare</a>
+      <a href="{{ url_for('track.index') }}" class="hover:text-[#0f8238]">Track</a>
       <a href="{{ url_for('settings.index') }}" class="hover:text-[#0f8238]">Settings</a>
       <a href="{{ url_for('auth.logout') }}" class="hover:text-red-600">Logout</a>
+
+      {% if household_members %}
+      <form method="POST" action="{{ url_for('members.switch') }}" class="flex items-center gap-1.5">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <a href="{{ url_for('members.index') }}" title="Manage household members">
+          <i class="fas fa-user-circle {% if current_actor %}text-[#0f8238] dark:text-[#5bd68d]{% else %}text-amber-500{% endif %}"></i>
+        </a>
+        <select name="name" onchange="this.form.submit()" title="Who's using this?"
+                class="dark-select h-8 pl-2 pr-7 text-xs rounded-md border
+                       {% if current_actor %}border-gray-300 dark:border-gray-600{% else %}border-amber-400 text-amber-600{% endif %}
+                       bg-white dark:bg-[#222] text-gray-700 dark:text-gray-200
+                       focus:outline-none focus:ring-2 focus:ring-[#0f8238] cursor-pointer">
+          {% if not current_actor %}
+            <option value="" selected disabled>Who's using this?</option>
+          {% endif %}
+          {% for m in household_members %}
+            <option value="{{ m }}" {% if m == current_actor %}selected{% endif %}>{{ m }}</option>
+          {% endfor %}
+        </select>
+      </form>
+      {% else %}
+      <a href="{{ url_for('members.index') }}" class="text-amber-600 hover:text-amber-700">
+        <i class="fas fa-user-plus"></i> Add members
+      </a>
+      {% endif %}
 
       <button id="themeToggle" class="text-gray-600 dark:text-gray-300 hover:text-[#0f8238] text-xl transition">
         <i class="fas fa-moon"></i>

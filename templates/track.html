@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+{% block content %}
+
+{% set action_styles = {
+  'create':  ('fas fa-plus',  'text-[#0f8238] dark:text-[#5bd68d]', 'Added'),
+  'update':  ('fas fa-pen',   'text-blue-600 dark:text-blue-400',   'Edited'),
+  'delete':  ('fas fa-trash', 'text-red-500 dark:text-red-400',     'Deleted'),
+  'restore': ('fas fa-undo',  'text-amber-600 dark:text-amber-400', 'Undone')
+} %}
+
+<!-- HEADER -->
+<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
+  <div>
+    <h2 class="text-xl font-bold text-gray-900 dark:text-gray-200">Track</h2>
+    <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+      Every change, who made it, and what it was before
+    </p>
+  </div>
+  <span class="text-xs text-gray-400 dark:text-gray-500">
+    {{ total }} recent change{{ 's' if total != 1 }}
+  </span>
+</div>
+
+<!-- FILTERS -->
+<div class="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700
+            rounded-lg p-4 shadow-sm mb-6 transition">
+  <form method="GET" class="flex flex-wrap items-center gap-3">
+    <select name="entity" onchange="this.form.submit()"
+            class="h-9 text-sm border border-gray-300 dark:border-gray-600 dark:bg-[#222]
+                   dark:text-gray-200 rounded-lg px-3 focus:ring-[#0f8238] focus:border-[#0f8238]">
+      <option value="">Everything</option>
+      {% for e in entity_types %}
+      <option value="{{ e }}" {% if e == entity_filter %}selected{% endif %}>{{ e|title }}</option>
+      {% endfor %}
+    </select>
+
+    <select name="actor" onchange="this.form.submit()"
+            class="h-9 text-sm border border-gray-300 dark:border-gray-600 dark:bg-[#222]
+                   dark:text-gray-200 rounded-lg px-3 focus:ring-[#0f8238] focus:border-[#0f8238]">
+      <option value="">Anyone</option>
+      {% for a in actors %}
+      <option value="{{ a }}" {% if a == actor_filter %}selected{% endif %}>{{ a }}</option>
+      {% endfor %}
+    </select>
+
+    <select name="action" onchange="this.form.submit()"
+            class="h-9 text-sm border border-gray-300 dark:border-gray-600 dark:bg-[#222]
+                   dark:text-gray-200 rounded-lg px-3 focus:ring-[#0f8238] focus:border-[#0f8238]">
+      <option value="">Any action</option>
+      {% for key, style in action_styles.items() %}
+      <option value="{{ key }}" {% if key == action_filter %}selected{% endif %}>{{ style[2] }}</option>
+      {% endfor %}
+    </select>
+
+    {% if entity_filter or actor_filter or action_filter %}
+    <a href="{{ url_for('track.index') }}"
+       class="text-xs text-gray-500 dark:text-gray-400 hover:text-red-500 transition">
+      <i class="fas fa-times mr-1"></i>Clear filters
+    </a>
+    {% endif %}
+  </form>
+</div>
+
+<!-- FEED -->
+{% for group in days %}
+<div class="mb-6">
+  <h3 class="text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500 mb-2">
+    {{ group.day.strftime('%A, %b %d, %Y') }}
+  </h3>
+
+  <div class="space-y-2">
+    {% for entry in group.entries %}
+    {% set style = action_styles.get(entry.action, ('fas fa-circle', 'text-gray-400', entry.action|title)) %}
+    <article class="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700
+                    rounded-lg p-4 shadow-sm transition
+                    {% if entry.undone %}opacity-60{% endif %}">
+
+      <div class="flex items-start justify-between gap-4">
+        <div class="flex-1 min-w-0">
+          <div class="flex flex-wrap items-center gap-2">
+            <i class="{{ style[0] }} fa-sm {{ style[1] }}"></i>
+            <span class="font-semibold text-sm text-gray-800 dark:text-gray-200">{{ style[2] }}</span>
+            <span class="text-sm text-gray-500 dark:text-gray-400">{{ entry.entity_label|lower }}</span>
+
+            {% if entry.summary %}
+            <span class="inline-block px-2 py-0.5 text-xs rounded-full
+                         bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300">
+              {{ entry.summary }}
+            </span>
+            {% endif %}
+
+            {% if entry.amount %}
+            <span class="text-sm font-bold text-[#f3703f] dark:text-[#ff9966]">Rs. {{ entry.amount }}</span>
+            {% endif %}
+
+            {% if entry.undone %}
+            <span class="text-xs px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30
+                         text-amber-700 dark:text-amber-400">undone</span>
+            {% endif %}
+          </div>
+
+          <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">
+            <i class="fas fa-user mr-0.5"></i>{{ entry.actor }}
+            <span class="mx-1">·</span>
+            {{ entry.created_at.strftime('%H:%M') }}
+          </p>
+
+          {% if entry.changes %}
+          <ul class="mt-2.5 space-y-1">
+            {% for field, old, new in entry.changes %}
+            <li class="text-xs text-gray-600 dark:text-gray-400">
+              <span class="font-medium text-gray-700 dark:text-gray-300">{{ field }}:</span>
+              <span class="line-through text-red-500 dark:text-red-400">{{ old }}</span>
+              <i class="fas fa-arrow-right fa-xs mx-1 text-gray-300 dark:text-gray-600"></i>
+              <span class="text-[#0f8238] dark:text-[#5bd68d]">{{ new }}</span>
+            </li>
+            {% endfor %}
+          </ul>
+          {% endif %}
+        </div>
+
+        <!-- UNDO -->
+        <div class="shrink-0">
+          {% if entry.action != 'restore' and not entry.undone %}
+          <form method="POST" action="{{ url_for('track.undo', log_id=entry.id) }}"
+                onsubmit="return confirm('Undo this change?')">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit"
+                    class="text-xs px-2.5 py-1 rounded border border-gray-200 dark:border-gray-700
+                           text-gray-500 dark:text-gray-400 hover:text-amber-600
+                           hover:border-amber-400 transition"
+                    title="Put this back the way it was">
+              <i class="fas fa-undo fa-xs mr-1"></i>Undo
+            </button>
+          </form>
+          {% endif %}
+        </div>
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+</div>
+{% endfor %}
+
+{% if not days %}
+<div class="text-center py-20">
+  <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-800 mb-4">
+    <i class="fas fa-history text-2xl text-gray-400 dark:text-gray-500"></i>
+  </div>
+  <p class="text-gray-500 dark:text-gray-400 mb-1">
+    {% if entity_filter or actor_filter or action_filter %}
+      No changes match your filters
+    {% else %}
+      No changes recorded yet
+    {% endif %}
+  </p>
+  <p class="text-sm text-gray-400 dark:text-gray-500">
+    {% if entity_filter or actor_filter or action_filter %}
+      <a href="{{ url_for('track.index') }}" class="text-[#0f8238] dark:text-[#5bd68d] hover:underline">Clear filters</a>
+    {% else %}
+      Changes are recorded from now on — history can't be backfilled
+    {% endif %}
+  </p>
+</div>
+{% endif %}
+
+{% endblock %}

@@ -16,6 +16,8 @@
   </a>
 </div>
 
+{% include 'expenses/_quick_add.html' %}
+
 {% if expense_count > 0 %}
 
 <!-- SUMMARY CARDS -->
@@ -96,82 +98,14 @@
 {% endif %}
 
 <!-- EXPENSE LIST -->
-{% if expenses %}
-<section class="space-y-2">
+<section class="space-y-2" id="expenseList">
   {% for expense in expenses %}
-  <article
-    onclick="window.location='{{ url_for('expenses.view_expense', id=expense.id) }}'"
-    class="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700 rounded-lg
-           p-4 sm:p-5 shadow-sm flex items-start justify-between gap-4 cursor-pointer
-           hover:shadow-md hover:border-gray-300 dark:hover:border-gray-600 transition"
-  >
-    <div class="flex-1 min-w-0">
-      <div class="flex flex-wrap items-center gap-2 mb-1.5">
-
-        <p class="font-bold text-lg text-[#f3703f] dark:text-[#ff9966]">
-          Rs. {{ expense.amount }}
-        </p>
-
-        <span class="inline-block px-2 py-0.5 text-xs rounded-full
-                     bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300">
-          {{ expense.category }}
-        </span>
-
-        <span class="text-gray-400 dark:text-gray-500 text-xs">
-          <i class="fas fa-calendar-alt mr-0.5"></i>{{ expense.date.strftime('%b %d, %Y') }}
-        </span>
-
-        {% if expense.attachment %}
-        <span class="text-gray-400 dark:text-gray-500 text-xs">
-          <i class="fas fa-paperclip mr-0.5"></i>
-        </span>
-        {% endif %}
-      </div>
-
-      {% if expense.note %}
-      <p class="text-sm text-gray-600 dark:text-gray-400 truncate max-w-lg">
-        {{ expense.note }}
-      </p>
-      {% endif %}
-
-      {% if expense.done_by %}
-      <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">
-        <i class="fas fa-user mr-0.5"></i> {{ expense.done_by }}
-      </p>
-      {% endif %}
-    </div>
-
-    <!-- ACTIONS -->
-    <div class="flex items-center gap-3 text-sm shrink-0">
-
-      <a href="{{ url_for('expenses.edit_expense', id=expense.id) }}"
-         onclick="event.stopPropagation();"
-         class="text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition"
-         title="Edit">
-        <i class="fas fa-pen fa-sm"></i>
-      </a>
-
-      <form method="POST" action="{{ url_for('expenses.delete_expense', id=expense.id) }}"
-            onclick="event.stopPropagation();"
-            onsubmit="return confirm('Delete this expense?')"
-            class="inline">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <button type="submit"
-                class="text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition"
-                title="Delete">
-          <i class="fas fa-trash fa-sm"></i>
-        </button>
-      </form>
-
-    </div>
-  </article>
+    {% include 'expenses/_row.html' %}
   {% endfor %}
 </section>
 
-{% else %}
-
-<!-- Empty State -->
-<div class="text-center py-20">
+{% if not expenses %}
+<div class="text-center py-20" id="expenseEmptyState">
   <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-orange-50 dark:bg-orange-900/20 mb-4">
     <i class="fas fa-receipt text-2xl text-[#f3703f] dark:text-[#ff9966]"></i>
   </div>
@@ -186,11 +120,11 @@
     {% if category_filter or person_filter %}
       <a href="{{ url_for('expenses.index') }}" class="text-[#0f8238] dark:text-[#5bd68d] hover:underline">Clear filters</a>
     {% else %}
-      <a href="{{ url_for('expenses.add_expense') }}" class="text-[#0f8238] dark:text-[#5bd68d] hover:underline">Add your first expense</a>
+      Use Quick add above to record your first one
     {% endif %}
   </p>
 </div>
-
 {% endif %}
+
 
 {% endblock %}

@@ -110,6 +110,45 @@
   </div>
 </div>
 
+{% if trail %}
+<!-- THIS RECORD'S HISTORY -->
+<div class="max-w-3xl mx-auto mt-6 bg-white dark:bg-[#1a1a1a] border border-gray-200
+            dark:border-gray-700 rounded-xl shadow-sm p-5 transition">
+  <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+    <i class="fas fa-history text-gray-400 mr-1.5"></i>History
+  </h3>
+
+  <ol class="space-y-3">
+    {% for entry in trail %}
+    <li class="text-sm border-l-2 border-gray-100 dark:border-gray-700 pl-3">
+      <p class="text-gray-700 dark:text-gray-300">
+        <span class="font-medium">{{ entry.actor }}</span>
+        {{ {'create': 'added this', 'update': 'edited this',
+            'delete': 'deleted this', 'restore': 'restored this'}.get(entry.action, entry.action) }}
+        <span class="text-gray-400 dark:text-gray-500 text-xs ml-1">
+          {{ entry.created_at.strftime('%b %d, %Y at %H:%M') }}
+        </span>
+      </p>
+
+      {% for field, old, new in entry.changes %}
+      <p class="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
+        {{ field }}:
+        <span class="line-through text-red-500 dark:text-red-400">{{ old }}</span>
+        <i class="fas fa-arrow-right fa-xs mx-1 text-gray-300 dark:text-gray-600"></i>
+        <span class="text-[#0f8238] dark:text-[#5bd68d]">{{ new }}</span>
+      </p>
+      {% endfor %}
+    </li>
+    {% endfor %}
+  </ol>
+
+  <a href="{{ url_for('track.index') }}"
+     class="inline-block mt-3 text-xs text-gray-400 hover:text-[#0f8238] dark:hover:text-[#5bd68d] transition">
+    See all changes <i class="fas fa-arrow-right fa-xs ml-0.5"></i>
+  </a>
+</div>
+{% endif %}
+
 <script>
 document.addEventListener("DOMContentLoaded", function () {
     const container = document.querySelector(".magnify-container");

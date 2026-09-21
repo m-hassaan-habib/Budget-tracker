@@ -72,7 +72,7 @@ class TestHistoryList:
 
         conn, cursor = make_mock_connection()
         cursor.fetchall.side_effect = [
-            [{'month': '2024-01'}, {'month': '2023-12'}],  # available months
+            [{'m': '2024-01'}, {'m': '2023-12'}],  # available months
             [{'id': 1, 'source': 'Salary', 'amount': Decimal('10000.00')}],  # archived income
             [{'done_by': 'Self', 'total': Decimal('5000.00')}],  # actual income
             [{'id': 1, 'amount': Decimal('1000.00'), 'category': 'Food', 'note': 'Test', 'date': date(2024, 1, 15), 'done_by': 'Self'}],  # expenses
@@ -91,7 +91,7 @@ class TestHistoryList:
 
         conn, cursor = make_mock_connection()
         cursor.fetchall.side_effect = [
-            [{'month': '2024-01'}],
+            [{'m': '2024-01'}],
             [{'id': 1, 'source': 'Salary', 'amount': Decimal('15000.00')}],  # expected income
             [{'done_by': 'Self', 'total': Decimal('8000.00')}],  # actual income
             [],  # expenses
@@ -109,7 +109,7 @@ class TestHistoryList:
 
         conn, cursor = make_mock_connection()
         cursor.fetchall.side_effect = [
-            [{'month': '2024-01'}],
+            [{'m': '2024-01'}],
             [{'id': 1, 'source': 'Salary', 'amount': Decimal('15000.00')}],
             [
                 {'done_by': 'Person1', 'total': Decimal('4000.00')},
@@ -130,7 +130,7 @@ class TestHistoryList:
 
         conn, cursor = make_mock_connection()
         cursor.fetchall.side_effect = [
-            [{'month': '2024-01'}],
+            [{'m': '2024-01'}],
             [{'id': 1, 'source': 'Salary', 'amount': Decimal('10000.00')}],  # expected = 10000
             [{'done_by': 'Self', 'total': Decimal('7000.00')}],  # actual = 7000
             [],
@@ -149,7 +149,7 @@ class TestHistoryList:
 
         conn, cursor = make_mock_connection()
         cursor.fetchall.side_effect = [
-            [{'month': '2024-01'}],
+            [{'m': '2024-01'}],
             [],
             [],
             [{'id': 1, 'amount': Decimal('500.00'), 'category': 'Food', 'note': 'Test', 'date': date(2024, 1, 15), 'done_by': 'Self'}],
@@ -209,7 +209,11 @@ class TestHistoryCompare:
         login_session(client_no_csrf)
 
         conn, cursor = make_mock_connection()
-        cursor.fetchall.return_value = [{'month': '2024-01'}, {'month': '2023-12'}]
+        cursor.fetchall.side_effect = [
+            [{'m': '2024-01'}, {'m': '2023-12'}],  # available months
+            [],  # income by month
+            [],  # expenses by month
+        ]
         app_no_csrf.db_pool.get_connection.return_value = conn
 
         response = client_no_csrf.get('/history/compare')
@@ -222,17 +226,11 @@ class TestHistoryCompare:
         conn, cursor = make_mock_connection()
         # The compare route makes multiple queries - need to mock all of them
         cursor.fetchall.side_effect = [
-            [{'month': '2024-01'}, {'month': '2023-12'}],  # available months
-            [{'month': '2024-01', 'total': Decimal('10000.00')}, {'month': '2023-12', 'total': Decimal('8000.00')}],  # income totals
-            [{'month': '2024-01', 'total': Decimal('5000.00')}, {'month': '2023-12', 'total': Decimal('4000.00')}],  # expense totals
-            [{'category': 'Food', 'month': '2024-01', 'total': Decimal('2000.00')}],  # category breakdown
-            [{'source': 'Salary', 'month': '2024-01', 'total': Decimal('10000.00')}],  # income sources
-        ]
-        cursor.fetchone.side_effect = [
-            {'total': Decimal('10000.00')},  # trend income
-            {'total': Decimal('5000.00')},   # trend expenses
-            {'total': Decimal('8000.00')},   # trend income
-            {'total': Decimal('4000.00')},   # trend expenses
+            [{'m': '2024-01'}, {'m': '2023-12'}],  # available months
+            [{'m': '2024-01', 'total': Decimal('10000.00')}, {'m': '2023-12', 'total': Decimal('8000.00')}],  # income totals
+            [{'m': '2024-01', 'total': Decimal('5000.00')}, {'m': '2023-12', 'total': Decimal('4000.00')}],  # expense totals
+            [{'category': 'Food', 'm': '2024-01', 'total': Decimal('2000.00')}],  # category breakdown
+            [{'source': 'Salary', 'm': '2024-01', 'total': Decimal('10000.00')}],  # income sources
         ]
         app_no_csrf.db_pool.get_connection.return_value = conn
 
@@ -244,15 +242,14 @@ class TestHistoryCompare:
         login_session(client_no_csrf)
 
         conn, cursor = make_mock_connection()
-        cursor.fetchall.return_value = [
-            {'month': '2024-01'},
-            {'month': '2023-12'},
-            {'month': '2023-11'},
-        ]
-        cursor.fetchone.side_effect = [
-            {'total': Decimal('10000.00')}, {'total': Decimal('5000.00')},
-            {'total': Decimal('9000.00')}, {'total': Decimal('4500.00')},
-            {'total': Decimal('8000.00')}, {'total': Decimal('4000.00')},
+        cursor.fetchall.side_effect = [
+            [{'m': '2024-01'}, {'m': '2023-12'}, {'m': '2023-11'}],  # available months
+            [{'m': '2024-01', 'total': Decimal('10000.00')},
+             {'m': '2023-12', 'total': Decimal('9000.00')},
+             {'m': '2023-11', 'total': Decimal('8000.00')}],  # income by month
+            [{'m': '2024-01', 'total': Decimal('5000.00')},
+             {'m': '2023-12', 'total': Decimal('4500.00')},
+             {'m': '2023-11', 'total': Decimal('4000.00')}],  # expenses by month
         ]
         app_no_csrf.db_pool.get_connection.return_value = conn
 
@@ -269,7 +266,7 @@ class TestHistorySavingsCalculation:
 
         conn, cursor = make_mock_connection()
         cursor.fetchall.side_effect = [
-            [{'month': '2024-01'}],
+            [{'m': '2024-01'}],
             [{'id': 1, 'source': 'Salary', 'amount': Decimal('10000.00')}],  # income = 10000
             [],
             [],
@@ -288,7 +285,7 @@ class TestHistorySavingsCalculation:
 
         conn, cursor = make_mock_connection()
         cursor.fetchall.side_effect = [
-            [{'month': '2024-01'}],
+            [{'m': '2024-01'}],
             [],  # no income
             [],
             [],

@@ -4,6 +4,8 @@ from flask import Blueprint, render_template, request, redirect, url_for, curren
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from auth_utils import login_required
+from routes.members import refresh_member_cache
+from routes.categories import seed_default_categories
 
 auth_bp = Blueprint('auth', __name__, url_prefix='/auth')
 
@@ -47,6 +49,9 @@ def signup():
                     "INSERT INTO users (name, email, password_hash) VALUES (%s, %s, %s)",
                     (name, email, pw_hash)
                 )
+                # A brand-new account with an empty category picker and no
+                # household members can't record anything, so seed both.
+                seed_default_categories(cur, cur.lastrowid)
                 conn.commit()
         finally:
             conn.close()
@@ -80,6 +85,23 @@ def login():
 
         session['user_id'] = user['id']
         session['user_name'] = user['name']
+
+        # Warm the household roster + default actor so the nav switcher works
+        # without a query on every page render.
+        conn = current_app.db_pool.get_connection()
+        try:
+            with conn.cursor(dictionary=True) as cur:
+                refresh_member_cache(cur, user['id'])
+                cur.execute(
+                    "SELECT default_done_by FROM setting WHERE user_id=%s LIMIT 1",
+                    (user['id'],)
+                )
+                row = cur.fetchone()
+                default_actor = row.get('default_done_by') if row else None
+                if default_actor in session.get('household_members', []):
+                    session['actor'] = default_actor
+        finally:
+            conn.close()
 
         return redirect(url_for('dashboard.index'))
 

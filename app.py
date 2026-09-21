@@ -10,6 +10,8 @@ from routes.settings import settings_bp
 from routes.history import history_bp
 from routes.auth import auth_bp
 from routes.categories import categories_bp
+from routes.members import members_bp
+from routes.activity_log import track_bp
 
 csrf = CSRFProtect()
 
@@ -39,6 +41,20 @@ def create_app(config_class=Config):
     app.register_blueprint(settings_bp)
     app.register_blueprint(history_bp)
     app.register_blueprint(categories_bp)
+    app.register_blueprint(members_bp)
+    app.register_blueprint(track_bp)
+
+    # Make the household roster and the active member available to every
+    # template, so the nav switcher doesn't have to be threaded through
+    # every single route. Read straight from the session: the roster is
+    # cached at login and refreshed by routes/members.py when it changes,
+    # so rendering a page costs no extra query.
+    @app.context_processor
+    def inject_household():
+        return {
+            'household_members': session.get('household_members', []),
+            'current_actor': session.get('actor'),
+        }
 
     # Security headers
     @app.after_request

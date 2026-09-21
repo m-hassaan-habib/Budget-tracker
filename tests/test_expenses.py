@@ -49,6 +49,8 @@ class TestExpenseAccess:
             [],  # expenses
             [],  # categories
             [],  # persons
+            [],  # quick-add category list
+            [],  # quick-add top category chips
         ]
         cursor.fetchone.side_effect = [
             {'total': Decimal('0'), 'count': 0},  # summary
@@ -75,6 +77,8 @@ class TestExpenseList:
             ],
             [{'category': 'Food', 'total': Decimal('100.00'), 'count': 1}],
             [{'done_by': 'Self'}],
+            [],  # quick-add category list
+            [],  # quick-add top category chips
         ]
         cursor.fetchone.side_effect = [
             {'total': Decimal('150.00'), 'count': 2},
@@ -95,6 +99,8 @@ class TestExpenseList:
             [{'id': 1, 'amount': Decimal('100.00'), 'category': 'Food', 'note': 'Lunch', 'date': date(2024, 1, 15), 'attachment': None, 'done_by': 'Self'}],
             [{'category': 'Food', 'total': Decimal('100.00'), 'count': 1}],
             [{'done_by': 'Self'}],
+            [],  # quick-add category list
+            [],  # quick-add top category chips
         ]
         cursor.fetchone.side_effect = [
             {'total': Decimal('100.00'), 'count': 1},
@@ -110,7 +116,7 @@ class TestExpenseList:
         login_session(client_no_csrf)
 
         conn, cursor = make_mock_connection()
-        cursor.fetchall.side_effect = [[], [], []]
+        cursor.fetchall.side_effect = [[], [], [], [], []]
         cursor.fetchone.side_effect = [
             {'total': Decimal('0'), 'count': 0},
             {'default_done_by': 'Self'},
@@ -407,3 +413,261 @@ class TestExpenseCSRF:
         login_session(client)
         response = client.post('/expenses/delete/1')
         assert response.status_code == 400
+
+
+class TestQuickAdd:
+    """Test the inline quick-entry endpoint."""
+
+    def _mock_row(self):
+        return {
+            'id': 42, 'amount': Decimal('300.00'), 'category': 'Grocery',
+            'note': None, 'date': date(2026, 9, 21), 'attachment': None,
+            'done_by': 'Hassan',
+        }
+
+    def test_quick_add_requires_auth(self, client_no_csrf):
+        response = client_no_csrf.post('/expenses/quick', data={})
+        assert response.status_code in (302, 308)
+
+    def test_quick_add_creates_expense(self, client_no_csrf, app_no_csrf):
+        login_session(client_no_csrf)
+
+        conn, cursor = make_mock_connection()
+        cursor.lastrowid = 42
+        cursor.fetchone.return_value = self._mock_row()
+        app_no_csrf.db_pool.get_connection.return_value = conn
+
+        response = client_no_csrf.post('/expenses/quick', data={
+            'amount': '300', 'category': 'Grocery',
+            'date': '2026-09-21', 'done_by': 'Hassan',
+        })
+
+        assert response.status_code == 200
+        payload = response.get_json()
+        assert payload['ok'] is True
+        assert payload['id'] == 42
+        # Returns the rendered row so the list markup lives in one place.
+        assert 'Grocery' in payload['html']
+        conn.commit.assert_called()
+
+    def test_quick_add_remembers_date_and_person(self, client_no_csrf, app_no_csrf):
+        """Sticky fields are the whole point -- catching up shouldn't mean
+        re-picking the same date and person for every entry."""
+        login_session(client_no_csrf)
+
+        conn, cursor = make_mock_connection()
+        cursor.lastrowid = 42
+        cursor.fetchone.return_value = self._mock_row()
+        app_no_csrf.db_pool.get_connection.return_value = conn
+
+        client_no_csrf.post('/expenses/quick', data={
+            'amount': '300', 'category': 'Grocery',
+            'date': '2026-09-18', 'done_by': 'Faran',
+        })
+
+        with client_no_csrf.session_transaction() as sess:
+            assert sess['last_expense_date'] == '2026-09-18'
+            assert sess['last_done_by'] == 'Faran'
+
+    def test_quick_add_rejects_bad_amount(self, client_no_csrf, app_no_csrf):
+        login_session(client_no_csrf)
+
+        conn, cursor = make_mock_connection()
+        app_no_csrf.db_pool.get_connection.return_value = conn
+
+        response = client_no_csrf.post('/expenses/quick', data={
+            'amount': 'abc', 'category': 'Grocery',
+            'date': '2026-09-21', 'done_by': 'Hassan',
+        })
+
+        assert response.status_code == 400
+        assert response.get_json()['ok'] is False
+        conn.commit.assert_not_called()
+
+    def test_quick_add_rejects_negative_amount(self, client_no_csrf, app_no_csrf):
+        login_session(client_no_csrf)
+
+        conn, cursor = make_mock_connection()
+        app_no_csrf.db_pool.get_connection.return_value = conn
+
+        response = client_no_csrf.post('/expenses/quick', data={
+            'amount': '-5', 'category': 'Grocery',
+            'date': '2026-09-21', 'done_by': 'Hassan',
+        })
+
+        assert response.status_code == 400
+        conn.commit.assert_not_called()
+
+    def test_quick_add_rejects_bad_date(self, client_no_csrf, app_no_csrf):
+        login_session(client_no_csrf)
+
+        conn, cursor = make_mock_connection()
+        app_no_csrf.db_pool.get_connection.return_value = conn
+
+        response = client_no_csrf.post('/expenses/quick', data={
+            'amount': '300', 'category': 'Grocery',
+            'date': 'not-a-date', 'done_by': 'Hassan',
+        })
+
+        assert response.status_code == 400
+        conn.commit.assert_not_called()
+
+    def test_quick_add_requires_category(self, client_no_csrf, app_no_csrf):
+        login_session(client_no_csrf)
+
+        conn, cursor = make_mock_connection()
+        app_no_csrf.db_pool.get_connection.return_value = conn
+
+        response = client_no_csrf.post('/expenses/quick', data={
+            'amount': '300', 'category': '',
+            'date': '2026-09-21', 'done_by': 'Hassan',
+        })
+
+        assert response.status_code == 400
+        conn.commit.assert_not_called()
+
+    def test_quick_add_requires_done_by(self, client_no_csrf, app_no_csrf):
+        login_session(client_no_csrf)
+
+        conn, cursor = make_mock_connection()
+        app_no_csrf.db_pool.get_connection.return_value = conn
+
+        response = client_no_csrf.post('/expenses/quick', data={
+            'amount': '300', 'category': 'Grocery',
+            'date': '2026-09-21', 'done_by': '',
+        })
+
+        assert response.status_code == 400
+        conn.commit.assert_not_called()
+
+    def test_quick_add_without_csrf_rejected(self, client):
+        login_session(client)
+        response = client.post('/expenses/quick', data={
+            'amount': '300', 'category': 'Grocery',
+            'date': '2026-09-21', 'done_by': 'Hassan',
+        })
+        assert response.status_code == 400
+
+    def test_quick_add_scopes_insert_to_user(self, client_no_csrf, app_no_csrf):
+        login_session(client_no_csrf, user_id=7)
+
+        conn, cursor = make_mock_connection()
+        cursor.lastrowid = 42
+        cursor.fetchone.return_value = self._mock_row()
+        app_no_csrf.db_pool.get_connection.return_value = conn
+
+        client_no_csrf.post('/expenses/quick', data={
+            'amount': '300', 'category': 'Grocery',
+            'date': '2026-09-21', 'done_by': 'Hassan',
+        })
+
+        insert = cursor.execute.call_args_list[0]
+        assert 7 in insert[0][1]
+
+
+class TestRepeatExpense:
+    """Test cloning an expense onto today."""
+
+    def test_repeat_requires_auth(self, client_no_csrf):
+        response = client_no_csrf.post('/expenses/repeat/1')
+        assert response.status_code in (302, 308)
+
+    def test_repeat_clones_with_today(self, client_no_csrf, app_no_csrf):
+        login_session(client_no_csrf)
+
+        conn, cursor = make_mock_connection()
+        cursor.fetchone.return_value = {
+            'amount': Decimal('450.00'), 'category': 'Grocery',
+            'note': 'Milk', 'done_by': 'Faisal',
+        }
+        app_no_csrf.db_pool.get_connection.return_value = conn
+
+        response = client_no_csrf.post('/expenses/repeat/1')
+        assert response.status_code == 302
+        conn.commit.assert_called()
+
+        insert = next(c for c in cursor.execute.call_args_list
+                      if 'INSERT INTO expense' in c[0][0])
+        assert date.today().isoformat() in insert[0][1]
+        assert 'Grocery' in insert[0][1]
+
+    def test_repeat_unknown_expense_404(self, client_no_csrf, app_no_csrf):
+        login_session(client_no_csrf)
+
+        conn, cursor = make_mock_connection()
+        cursor.fetchone.return_value = None
+        app_no_csrf.db_pool.get_connection.return_value = conn
+
+        response = client_no_csrf.post('/expenses/repeat/999')
+        assert response.status_code == 404
+        conn.commit.assert_not_called()
+
+    def test_repeat_respects_user_ownership(self, client_no_csrf, app_no_csrf):
+        login_session(client_no_csrf, user_id=3)
+
+        conn, cursor = make_mock_connection()
+        cursor.fetchone.return_value = None
+        app_no_csrf.db_pool.get_connection.return_value = conn
+
+        client_no_csrf.post('/expenses/repeat/1')
+
+        select = cursor.execute.call_args_list[0]
+        assert 'user_id' in select[0][0]
+        assert 3 in select[0][1]
+
+    def test_repeat_via_get_rejected(self, client):
+        login_session(client)
+        response = client.get('/expenses/repeat/1')
+        assert response.status_code == 405
+
+    def test_repeat_without_csrf_rejected(self, client):
+        login_session(client)
+        response = client.post('/expenses/repeat/1')
+        assert response.status_code == 400
+
+
+class TestExpenseTrail:
+    """The per-record history shown on the expense detail page."""
+
+    def test_view_shows_record_history(self, client_no_csrf, app_no_csrf):
+        import json
+        from datetime import datetime
+
+        login_session(client_no_csrf)
+
+        conn, cursor = make_mock_connection()
+        cursor.fetchone.return_value = {
+            'id': 1, 'amount': Decimal('350.00'), 'category': 'Grocery',
+            'note': 'Milk', 'date': date(2026, 9, 20), 'attachment': None,
+            'done_by': 'Faisal',
+        }
+        cursor.fetchall.return_value = [{
+            'id': 3, 'actor': 'Hassan', 'entity_type': 'expense', 'entity_id': 1,
+            'action': 'update',
+            'before_json': json.dumps({'amount': '300.00'}),
+            'after_json': json.dumps({'amount': '350.00'}),
+            'undoes_log_id': None, 'created_at': datetime(2026, 9, 21, 9, 5),
+            'undone': 0,
+        }]
+        app_no_csrf.db_pool.get_connection.return_value = conn
+
+        body = client_no_csrf.get('/expenses/view/1').get_data(as_text=True)
+
+        assert 'History' in body
+        assert 'Hassan' in body
+        assert '300.00' in body and '350.00' in body
+
+    def test_view_without_history_omits_section(self, client_no_csrf, app_no_csrf):
+        login_session(client_no_csrf)
+
+        conn, cursor = make_mock_connection()
+        cursor.fetchone.return_value = {
+            'id': 1, 'amount': Decimal('350.00'), 'category': 'Grocery',
+            'note': None, 'date': date(2026, 9, 20), 'attachment': None,
+            'done_by': 'Faisal',
+        }
+        cursor.fetchall.return_value = []
+        app_no_csrf.db_pool.get_connection.return_value = conn
+
+        body = client_no_csrf.get('/expenses/view/1').get_data(as_text=True)
+        assert 'See all changes' not in body
