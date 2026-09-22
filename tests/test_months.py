@@ -93,6 +93,22 @@ class TestAvailableMonths:
         assert 'FROM income' not in cur.sql
         assert cur.params == (7,)
 
+    def test_one_ledger_still_dedupes(self):
+        """A single table means no UNION, so DISTINCT has to do the deduping.
+
+        Without it the dropdown got one option per expense row -- hundreds of
+        'September 2026' entries.
+        """
+        cur = FakeCursor([])
+        months.available_months(cur, 7, tables=('expense',))
+        assert 'UNION' not in cur.sql
+        assert cur.sql.startswith('SELECT DISTINCT m FROM (')
+
+    def test_both_ledgers_dedupe(self):
+        cur = FakeCursor([])
+        months.available_months(cur, 7)
+        assert cur.sql.startswith('SELECT DISTINCT m FROM (')
+
     def test_drops_null_months(self):
         cur = FakeCursor([{'m': '2026-09'}, {'m': None}])
         assert months.available_months(cur, 7) == ['2026-09']

@@ -74,8 +74,10 @@ def available_months(cur, user_id, tables=('expense', 'income')):
         " WHERE user_id=%s AND date IS NOT NULL"
         for table in tables
     )
+    # DISTINCT, not UNION's implicit dedup: with a single table there is no
+    # UNION at all, and the dropdown would get one option per row.
     cur.execute(
-        "SELECT m FROM (" + unions + ") AS months ORDER BY m DESC",
+        "SELECT DISTINCT m FROM (" + unions + ") AS months ORDER BY m DESC",
         tuple(user_id for _ in tables)
     )
     return [row['m'] for row in cur.fetchall() if row['m']]
