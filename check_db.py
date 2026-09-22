@@ -56,15 +56,18 @@ def snapshot():
     return out
 
 
-def total_expense_money(snap):
-    """All expense money, wherever it currently lives."""
-    return sum(float(snap["sums"].get(t, 0)) for t in
-               ("expense", "archived_expense", "archived_expense_backup"))
+def money(snap, table):
+    return float(snap["sums"].get(table, 0) or 0)
 
 
-def total_income_money(snap):
-    return sum(float(snap["sums"].get(t, 0)) for t in
-               ("income", "archived_income", "archived_income_backup"))
+def expected_after(before, live, archived):
+    """What the live table should total once the archive is merged into it.
+
+    The `*_backup` tables are a retained copy of rows that now also live in
+    the main table, so they must NOT be added to the live total -- doing that
+    counts every archived row twice.
+    """
+    return money(before, live) + money(before, archived)
 
 
 def main():
@@ -81,13 +84,26 @@ def main():
             flag = "" if b == a else "   <-- changed"
             print(f"  {table:28} {str(b):>8} -> {str(a):>8}{flag}")
 
-        print("\nMONEY (must match -- rows moved tables, nothing was created or lost)")
+        print("\nMONEY (live table after == live + archived before)")
         ok = True
-        for label, fn in (("expenses", total_expense_money), ("income", total_income_money)):
-            b, a = fn(before), fn(after)
-            match = abs(b - a) < 0.01
+        for label, live, archived in (("expenses", "expense", "archived_expense"),
+                                      ("income", "income", "archived_income")):
+            want = expected_after(before, live, archived)
+            got = money(after, live)
+            match = abs(want - got) < 0.01
             ok = ok and match
-            print(f"  total {label:10} {b:>14,.2f} -> {a:>14,.2f}   {'OK' if match else 'MISMATCH'}")
+            print(f"  {label:9} live {money(before, live):>13,.2f}"
+                  f" + archived {money(before, archived):>13,.2f}"
+                  f" = {want:>13,.2f} | actual {got:>13,.2f}  {'OK' if match else 'MISMATCH'}")
+
+        print("\n  retained copies (must still match what was archived):")
+        for label, archived in (("expenses", "archived_expense"), ("income", "archived_income")):
+            want = money(before, archived)
+            got = money(after, f"{archived}_backup")
+            match = abs(want - got) < 0.01
+            ok = ok and match
+            print(f"  {label:9} {archived}_backup {got:>13,.2f} vs original "
+                  f"{want:>13,.2f}  {'OK' if match else 'MISMATCH'}")
 
         print("\n" + ("PASS - no money gained or lost" if ok
                       else "FAIL - STOP AND RESTORE THE BACKUP"))
