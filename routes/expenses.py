@@ -9,6 +9,7 @@ from werkzeug.utils import secure_filename
 from auth_utils import login_required, current_actor
 from routes.categories import list_categories, top_categories
 from routes.members import member_names
+from months import format_month, month_bounds, month_options, parse_month
 import activity
 
 expenses_bp = Blueprint('expenses', __name__, url_prefix='/expenses')
@@ -74,6 +75,19 @@ def index():
     category_filter = request.args.get('category', '')
     person_filter = request.args.get('person', '')
 
+    # The month is a scope rather than a filter: it narrows the totals as well
+    # as the list, so "September" answers "what did September cost".
+    month_filter = request.args.get('month', '')
+    if not parse_month(month_filter):
+        month_filter = ''
+    month_range = month_bounds(month_filter) if month_filter else None
+
+    def scoped(query, params):
+        """Append the month window to a query, when one is selected."""
+        if not month_range:
+            return query, params
+        return query + " AND date BETWEEN %s AND %s", params + list(month_range)
+
     conn = current_app.db_pool.get_connection()
     try:
         with conn.cursor(dictionary=True) as cur:
@@ -92,28 +106,42 @@ def index():
                 expense_query += " AND done_by=%s"
                 params.append(person_filter)
 
+            expense_query, params = scoped(expense_query, params)
             expense_query += " ORDER BY date DESC"
             cur.execute(expense_query, tuple(params))
             expenses = cur.fetchall()
 
-            # Unfiltered totals for summary
-            cur.execute(
-                "SELECT COALESCE(SUM(amount),0) AS total, COUNT(*) AS count FROM expense WHERE user_id=%s",
-                (session['user_id'],)
+            # Totals for the summary cards: scoped to the month, but not to the
+            # category/person filters, so the cards stay a stable reference
+            # point while you drill into them.
+            summary_query, summary_params = scoped(
+                "SELECT COALESCE(SUM(amount),0) AS total, COUNT(*) AS count "
+                "FROM expense WHERE user_id=%s",
+                [session['user_id']]
             )
+            cur.execute(summary_query, tuple(summary_params))
             summary = cur.fetchone()
             total_expenses = float(summary['total'])
             expense_count = int(summary['count'])
 
-            # Category breakdown for filter + top category
+            # Top category, for the month in view.
+            breakdown_query, breakdown_params = scoped(
+                "SELECT category, SUM(amount) AS total FROM expense WHERE user_id=%s",
+                [session['user_id']]
+            )
+            cur.execute(breakdown_query + " GROUP BY category ORDER BY total DESC",
+                        tuple(breakdown_params))
+            breakdown = cur.fetchall()
+            top_category = breakdown[0]['category'] if breakdown else None
+
+            # The dropdown option lists stay all-time. Scoping them to the month
+            # would make the selected category vanish from its own dropdown.
             cur.execute("""
-                SELECT category, SUM(amount) AS total, COUNT(*) AS count
+                SELECT DISTINCT category
                 FROM expense WHERE user_id=%s
-                GROUP BY category ORDER BY total DESC
+                ORDER BY category
             """, (session['user_id'],))
-            categories = cur.fetchall()
-            top_category = categories[0]['category'] if categories else None
-            category_list = [r['category'] for r in categories]
+            category_list = [r['category'] for r in cur.fetchall()]
 
             # Persons for filter
             cur.execute(
@@ -121,6 +149,8 @@ def index():
                 (session['user_id'],)
             )
             person_list = [r['done_by'] for r in cur.fetchall()]
+
+            months = month_options(cur, session['user_id'], month_filter, tables=('expense',))
 
             cur.execute("""
                 SELECT default_done_by
@@ -146,11 +176,17 @@ def index():
             sticky_done_by=session.get('last_done_by') or session.get('actor') or default_done_by,
             total_expenses=total_expenses,
             expense_count=expense_count,
+            # The filter bar must survive an empty month, or there would be no
+            # way back out of one.
+            has_expenses=bool(category_list),
             top_category=top_category,
             category_list=category_list,
             person_list=person_list,
             category_filter=category_filter,
             person_filter=person_filter,
+            month_filter=month_filter,
+            month_display=format_month(month_filter) if month_filter else None,
+            month_options=months,
         )
     finally:
         conn.close()

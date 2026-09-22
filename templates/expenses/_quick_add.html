@@ -109,6 +109,10 @@
   const list     = document.getElementById('expenseList');
   const emptyState = document.getElementById('expenseEmptyState');
   const csrf     = document.querySelector('meta[name="csrf-token"]').content;
+  // Empty unless the list is scoped to one month, in which case an entry
+  // dated outside it must not be prepended -- the row would contradict the
+  // filter above it.
+  const listMonth = (list && list.dataset.month) || '';
 
   function say(message, ok) {
     status.textContent = message;
@@ -150,8 +154,11 @@
         return;
       }
 
-      if (emptyState) emptyState.remove();
-      if (list) list.insertAdjacentHTML('afterbegin', data.html);
+      const inView = !listMonth || dateField.value.slice(0, 7) === listMonth;
+      if (inView) {
+        if (emptyState) emptyState.remove();
+        if (list) list.insertAdjacentHTML('afterbegin', data.html);
+      }
 
       // Keep date and person; clear only what changes per entry.
       form.querySelector('[name="amount"]').value = '';
@@ -159,7 +166,7 @@
       catField.selectedIndex = 0;
       form.querySelector('[name="amount"]').focus();
 
-      say('Added', true);
+      say(inView ? 'Added' : 'Added to another month', true);
     } catch (err) {
       say('Network error — not saved.', false);
     } finally {

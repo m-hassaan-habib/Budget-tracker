@@ -5,7 +5,9 @@
 <!-- HEADER -->
 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
   <div>
-    <h2 class="text-xl font-bold text-gray-900 dark:text-gray-200">All Expenses</h2>
+    <h2 class="text-xl font-bold text-gray-900 dark:text-gray-200">
+      {% if month_display %}{{ month_display }}{% else %}All Expenses{% endif %}
+    </h2>
     <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Track and manage your spending</p>
   </div>
 
@@ -18,7 +20,7 @@
 
 {% include 'expenses/_quick_add.html' %}
 
-{% if expense_count > 0 %}
+{% if has_expenses %}
 
 <!-- SUMMARY CARDS -->
 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
@@ -32,7 +34,9 @@
     <p class="text-2xl font-extrabold text-[#f3703f] dark:text-[#ff9966]">
       Rs. {{ total_expenses | round(2) }}
     </p>
-    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">{{ expense_count }} transaction{{ 's' if expense_count != 1 }}</p>
+    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">
+      {{ expense_count }} transaction{{ 's' if expense_count != 1 }}{% if month_display %} in {{ month_display }}{% endif %}
+    </p>
   </div>
 
   <div class="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700
@@ -63,6 +67,15 @@
 <div class="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700
             rounded-lg p-4 shadow-sm mb-6 transition">
   <form method="GET" class="flex flex-wrap items-center gap-3">
+    <select name="month" onchange="this.form.submit()"
+            class="h-9 text-sm border border-gray-300 dark:border-gray-600 dark:bg-[#222]
+                   dark:text-gray-200 rounded-lg px-3 focus:ring-[#0f8238] focus:border-[#0f8238]">
+      <option value="">All Months</option>
+      {% for value, label in month_options %}
+      <option value="{{ value }}" {% if value == month_filter %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+
     <select name="category" onchange="this.form.submit()"
             class="h-9 text-sm border border-gray-300 dark:border-gray-600 dark:bg-[#222]
                    dark:text-gray-200 rounded-lg px-3 focus:ring-[#0f8238] focus:border-[#0f8238]">
@@ -81,7 +94,7 @@
       {% endfor %}
     </select>
 
-    {% if category_filter or person_filter %}
+    {% if category_filter or person_filter or month_filter %}
     <a href="{{ url_for('expenses.index') }}"
        class="text-xs text-gray-500 dark:text-gray-400 hover:text-red-500 transition">
       <i class="fas fa-times mr-1"></i>Clear filters
@@ -90,7 +103,7 @@
 
     <span class="ml-auto text-xs text-gray-400 dark:text-gray-500">
       {{ expenses | length }} result{{ 's' if expenses | length != 1 }}
-      {% if category_filter or person_filter %} (filtered){% endif %}
+      {% if category_filter or person_filter or month_filter %} (filtered){% endif %}
     </span>
   </form>
 </div>
@@ -98,7 +111,7 @@
 {% endif %}
 
 <!-- EXPENSE LIST -->
-<section class="space-y-2" id="expenseList">
+<section class="space-y-2" id="expenseList" data-month="{{ month_filter or '' }}">
   {% for expense in expenses %}
     {% include 'expenses/_row.html' %}
   {% endfor %}
@@ -110,14 +123,14 @@
     <i class="fas fa-receipt text-2xl text-[#f3703f] dark:text-[#ff9966]"></i>
   </div>
   <p class="text-gray-500 dark:text-gray-400 mb-1">
-    {% if category_filter or person_filter %}
+    {% if category_filter or person_filter or month_filter %}
       No expenses match your filters
     {% else %}
       No expenses recorded yet
     {% endif %}
   </p>
   <p class="text-sm text-gray-400 dark:text-gray-500">
-    {% if category_filter or person_filter %}
+    {% if category_filter or person_filter or month_filter %}
       <a href="{{ url_for('expenses.index') }}" class="text-[#0f8238] dark:text-[#5bd68d] hover:underline">Clear filters</a>
     {% else %}
       Use Quick add above to record your first one

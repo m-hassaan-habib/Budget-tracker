@@ -62,17 +62,32 @@ def resolve_month(request):
     return requested if parse_month(requested) else current_month()
 
 
-def available_months(cur, user_id):
-    """Every month that has any activity, newest first."""
+def available_months(cur, user_id, tables=('expense', 'income')):
+    """Every month that has any activity, newest first.
+
+    `tables` narrows which ledgers count -- the expenses page only offers
+    months it can actually show rows for. The names come from this module's
+    own tuples, never from a request, so interpolating them is safe.
+    """
+    unions = " UNION ".join(
+        "SELECT DATE_FORMAT(date, '%Y-%m') AS m FROM " + table +
+        " WHERE user_id=%s AND date IS NOT NULL"
+        for table in tables
+    )
     cur.execute(
-        """
-        SELECT m FROM (
-            SELECT DATE_FORMAT(date, '%Y-%m') AS m FROM expense WHERE user_id=%s AND date IS NOT NULL
-            UNION
-            SELECT DATE_FORMAT(date, '%Y-%m') AS m FROM income  WHERE user_id=%s AND date IS NOT NULL
-        ) AS months
-        ORDER BY m DESC
-        """,
-        (user_id, user_id)
+        "SELECT m FROM (" + unions + ") AS months ORDER BY m DESC",
+        tuple(user_id for _ in tables)
     )
     return [row['m'] for row in cur.fetchall() if row['m']]
+
+
+def month_options(cur, user_id, selected=None, tables=('expense', 'income')):
+    """(value, label) pairs for a month dropdown, selected month guaranteed.
+
+    A month with no rows left in it must still be selectable, otherwise the
+    dropdown would silently jump the user somewhere else.
+    """
+    months = available_months(cur, user_id, tables)
+    if selected and selected not in months:
+        months = sorted([selected] + months, reverse=True)
+    return [(m, format_month(m)) for m in months]

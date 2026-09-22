@@ -47,8 +47,10 @@ class TestExpenseAccess:
         conn, cursor = make_mock_connection()
         cursor.fetchall.side_effect = [
             [],  # expenses
-            [],  # categories
+            [],  # category breakdown (top category)
+            [],  # category filter options
             [],  # persons
+            [],  # month options
             [],  # quick-add category list
             [],  # quick-add top category chips
         ]
@@ -75,8 +77,10 @@ class TestExpenseList:
                 {'id': 1, 'amount': Decimal('100.00'), 'category': 'Food', 'note': 'Lunch', 'date': date(2024, 1, 15), 'attachment': None, 'done_by': 'Self'},
                 {'id': 2, 'amount': Decimal('50.00'), 'category': 'Transport', 'note': 'Bus', 'date': date(2024, 1, 14), 'attachment': None, 'done_by': 'Self'},
             ],
-            [{'category': 'Food', 'total': Decimal('100.00'), 'count': 1}],
+            [{'category': 'Food', 'total': Decimal('100.00')}],  # breakdown
+            [{'category': 'Food'}],  # category filter options
             [{'done_by': 'Self'}],
+            [{'m': '2024-01'}],  # month options
             [],  # quick-add category list
             [],  # quick-add top category chips
         ]
@@ -97,8 +101,10 @@ class TestExpenseList:
         conn, cursor = make_mock_connection()
         cursor.fetchall.side_effect = [
             [{'id': 1, 'amount': Decimal('100.00'), 'category': 'Food', 'note': 'Lunch', 'date': date(2024, 1, 15), 'attachment': None, 'done_by': 'Self'}],
-            [{'category': 'Food', 'total': Decimal('100.00'), 'count': 1}],
+            [{'category': 'Food', 'total': Decimal('100.00')}],
+            [{'category': 'Food'}],
             [{'done_by': 'Self'}],
+            [{'m': '2024-01'}],
             [],  # quick-add category list
             [],  # quick-add top category chips
         ]
@@ -116,7 +122,7 @@ class TestExpenseList:
         login_session(client_no_csrf)
 
         conn, cursor = make_mock_connection()
-        cursor.fetchall.side_effect = [[], [], [], [], []]
+        cursor.fetchall.side_effect = [[], [], [], [], [], [], []]
         cursor.fetchone.side_effect = [
             {'total': Decimal('0'), 'count': 0},
             {'default_done_by': 'Self'},
@@ -125,6 +131,96 @@ class TestExpenseList:
 
         response = client_no_csrf.get('/expenses/?person=Self')
         assert response.status_code == 200
+
+
+class TestExpenseMonthFilter:
+    """The month dropdown scopes both the list and the summary cards."""
+
+    def _mock_page(self, cursor):
+        cursor.fetchall.side_effect = [[], [], [], [], [{'m': '2024-01'}], [], []]
+        cursor.fetchone.side_effect = [
+            {'total': Decimal('0'), 'count': 0},
+            {'default_done_by': 'Self'},
+        ]
+
+    def test_month_narrows_every_query(self, client_no_csrf, app_no_csrf):
+        """A selected month bounds the list, the totals and the breakdown."""
+        login_session(client_no_csrf)
+
+        conn, cursor = make_mock_connection()
+        self._mock_page(cursor)
+        app_no_csrf.db_pool.get_connection.return_value = conn
+
+        response = client_no_csrf.get('/expenses/?month=2024-01')
+        assert response.status_code == 200
+
+        bounded = [
+            call for call in cursor.execute.call_args_list
+            if 'date BETWEEN' in call.args[0]
+        ]
+        assert len(bounded) == 3, "list, summary and breakdown must all be scoped"
+        for call in bounded:
+            assert call.args[1][-2:] == (date(2024, 1, 1), date(2024, 1, 31))
+
+    def test_no_month_leaves_queries_unbounded(self, client_no_csrf, app_no_csrf):
+        """Without ?month=, the page still reports every expense."""
+        login_session(client_no_csrf)
+
+        conn, cursor = make_mock_connection()
+        self._mock_page(cursor)
+        app_no_csrf.db_pool.get_connection.return_value = conn
+
+        response = client_no_csrf.get('/expenses/')
+        assert response.status_code == 200
+        assert not any('date BETWEEN' in c.args[0] for c in cursor.execute.call_args_list)
+
+    def test_junk_month_is_ignored(self, client_no_csrf, app_no_csrf):
+        """A garbage ?month= must fall back to all months, not error."""
+        login_session(client_no_csrf)
+
+        conn, cursor = make_mock_connection()
+        self._mock_page(cursor)
+        app_no_csrf.db_pool.get_connection.return_value = conn
+
+        response = client_no_csrf.get('/expenses/?month=drop-table')
+        assert response.status_code == 200
+        assert not any('date BETWEEN' in c.args[0] for c in cursor.execute.call_args_list)
+
+    def test_month_combines_with_category(self, client_no_csrf, app_no_csrf):
+        """Month and category narrow the list together, not exclusively."""
+        login_session(client_no_csrf)
+
+        conn, cursor = make_mock_connection()
+        self._mock_page(cursor)
+        app_no_csrf.db_pool.get_connection.return_value = conn
+
+        response = client_no_csrf.get('/expenses/?month=2024-01&category=Food')
+        assert response.status_code == 200
+
+        list_query = cursor.execute.call_args_list[0]
+        assert 'category=%s' in list_query.args[0]
+        assert 'date BETWEEN' in list_query.args[0]
+        assert list_query.args[1] == (1, 'Food', date(2024, 1, 1), date(2024, 1, 31))
+
+    def test_dropdown_offers_the_selected_month(self, client_no_csrf, app_no_csrf):
+        """An empty month stays selectable so the user can navigate back out."""
+        login_session(client_no_csrf)
+
+        conn, cursor = make_mock_connection()
+        # No rows in January, but March has some -- so the filter bar is shown.
+        cursor.fetchall.side_effect = [
+            [], [], [{'category': 'Food'}], [], [{'m': '2024-03'}], [], [],
+        ]
+        cursor.fetchone.side_effect = [
+            {'total': Decimal('0'), 'count': 0},
+            {'default_done_by': 'Self'},
+        ]
+        app_no_csrf.db_pool.get_connection.return_value = conn
+
+        response = client_no_csrf.get('/expenses/?month=2024-01')
+        assert response.status_code == 200
+        assert b'January 2024' in response.data
+        assert b'March 2024' in response.data
 
 
 class TestAddExpense:

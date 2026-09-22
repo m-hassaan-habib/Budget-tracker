@@ -62,6 +62,68 @@ class TestParseAndFormat:
         assert months.month_key(date(2026, 9, 21)) == '2026-09'
 
 
+class FakeCursor:
+    """Records the SQL it was handed and replays one canned result."""
+
+    def __init__(self, rows):
+        self.rows = rows
+        self.sql = None
+        self.params = None
+
+    def execute(self, sql, params):
+        self.sql = sql
+        self.params = params
+
+    def fetchall(self):
+        return self.rows
+
+
+class TestAvailableMonths:
+    def test_unions_both_ledgers_by_default(self):
+        cur = FakeCursor([{'m': '2026-09'}, {'m': '2026-08'}])
+        assert months.available_months(cur, 7) == ['2026-09', '2026-08']
+        assert 'FROM expense' in cur.sql
+        assert 'FROM income' in cur.sql
+        assert cur.params == (7, 7)
+
+    def test_can_be_narrowed_to_one_ledger(self):
+        """The expenses page must not offer months it has no expenses for."""
+        cur = FakeCursor([{'m': '2026-09'}])
+        assert months.available_months(cur, 7, tables=('expense',)) == ['2026-09']
+        assert 'FROM income' not in cur.sql
+        assert cur.params == (7,)
+
+    def test_drops_null_months(self):
+        cur = FakeCursor([{'m': '2026-09'}, {'m': None}])
+        assert months.available_months(cur, 7) == ['2026-09']
+
+    def test_placeholders_survive_the_format_string(self):
+        """DATE_FORMAT's %Y/%m must reach the driver, not be eaten by str.format."""
+        cur = FakeCursor([])
+        months.available_months(cur, 7, tables=('expense',))
+        assert "DATE_FORMAT(date, '%Y-%m')" in cur.sql
+        assert cur.sql.count('%s') == 1
+
+
+class TestMonthOptions:
+    def test_labels_each_month(self):
+        cur = FakeCursor([{'m': '2026-09'}])
+        assert months.month_options(cur, 7) == [('2026-09', 'September 2026')]
+
+    def test_keeps_the_selected_month_selectable(self):
+        """A month emptied of rows must stay in its own dropdown."""
+        cur = FakeCursor([{'m': '2026-09'}])
+        assert months.month_options(cur, 7, selected='2026-10') == [
+            ('2026-10', 'October 2026'), ('2026-09', 'September 2026')
+        ]
+
+    def test_does_not_duplicate_an_existing_month(self):
+        cur = FakeCursor([{'m': '2026-09'}])
+        assert months.month_options(cur, 7, selected='2026-09') == [
+            ('2026-09', 'September 2026')
+        ]
+
+
 class TestResolveMonth:
     class FakeRequest:
         def __init__(self, args):

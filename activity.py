@@ -31,7 +31,7 @@ ENTITIES = {
     },
     'income': {
         'table': 'income',
-        'columns': ('source', 'amount'),
+        'columns': ('source', 'amount', 'date'),
         'label': 'Income',
     },
     'setting': {
